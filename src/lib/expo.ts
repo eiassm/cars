@@ -20,21 +20,18 @@ export type Exhibitor = {
   image: string;
 };
 
-// Placeholder exhibitors carried over from the awards draft. Replace with the confirmed list.
-export const EXHIBITORS: Exhibitor[] = [
-  { id: "mg", name: { ar: "إم جي فلسطين", en: "MG Palestine" }, city: { ar: "رام الله", en: "Ramallah" }, brands: "MG", image: "/images/ex-01.webp" },
-  { id: "quds", name: { ar: "القدس للسيارات", en: "Al-Quds Motors" }, city: { ar: "القدس", en: "Jerusalem" }, brands: "Hyundai · Genesis", image: "/images/ex-02.webp" },
-  { id: "nablus", name: { ar: "نابلس موتورز", en: "Nablus Motors" }, city: { ar: "نابلس", en: "Nablus" }, brands: "Kia", image: "/images/ex-03.webp" },
-  { id: "jericho", name: { ar: "أريحا للسيارات", en: "Jericho Auto" }, city: { ar: "أريحا", en: "Jericho" }, brands: "Toyota · Lexus", image: "/images/ex-04.webp" },
-  { id: "beth", name: { ar: "بيت لحم موتورز", en: "Bethlehem Motors" }, city: { ar: "بيت لحم", en: "Bethlehem" }, brands: "BYD", image: "/images/ex-05.webp" },
-  { id: "hebron", name: { ar: "الخليل أوتو", en: "Hebron Auto House" }, city: { ar: "الخليل", en: "Hebron" }, brands: "Chery · Jetour", image: "/images/ex-06.webp" },
-  { id: "jenin", name: { ar: "جنين للسيارات", en: "Jenin Cars" }, city: { ar: "جنين", en: "Jenin" }, brands: "Geely", image: "/images/ex-07.webp" },
-  { id: "tulkarm", name: { ar: "طولكرم موتورز", en: "Tulkarm Motors" }, city: { ar: "طولكرم", en: "Tulkarm" }, brands: "Skoda · Volkswagen", image: "/images/ex-08.webp" },
-  { id: "gaza", name: { ar: "مركز غزة للسيارات", en: "Gaza Auto Center" }, city: { ar: "غزة", en: "Gaza" }, brands: "Nissan", image: "/images/ex-09.webp" },
-  { id: "bireh", name: { ar: "البيرة أوتو", en: "Al-Bireh Auto" }, city: { ar: "البيرة", en: "Al-Bireh" }, brands: "Mitsubishi", image: "/images/ex-10.webp" },
-  { id: "qalq", name: { ar: "قلقيلية موتورز", en: "Qalqilya Motors" }, city: { ar: "قلقيلية", en: "Qalqilya" }, brands: "Peugeot · Citroën", image: "/images/ex-11.webp" },
-  { id: "rag", name: { ar: "رام الله أوتو جروب", en: "Ramallah Auto Group" }, city: { ar: "رام الله", en: "Ramallah" }, brands: "Changan · Ford", image: "/images/ex-12.webp" },
-];
+// No dealer is confirmed yet, so pavilions stay unbranded. Fill this with the signed exhibitors
+// (dealer name, city, brands) and the signs, list and search pick them up.
+export const EXHIBITORS: Exhibitor[] = Array.from({ length: 12 }, (_, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  return {
+    id: `pavilion-${n}`,
+    name: { ar: `جناح ${n}`, en: `Pavilion ${n}` },
+    city: { ar: "", en: "" },
+    brands: "",
+    image: `/images/ex-${n}.webp`,
+  };
+});
 
 /** Outline of the yard (curb line), clockwise from the north-west corner. */
 export const LOT: [number, number][] = [
@@ -88,7 +85,8 @@ export const SEATS: [number, number, number][] = (() => {
   return out;
 })();
 
-export type ZoneGroup = "prog" | "booth" | "svc";
+export type ZoneGroup = "prog" | "booth" | "bank" | "svc";
+export type Tier = "premium" | "golden" | "regular";
 
 export type Zone = {
   id: string;
@@ -104,6 +102,7 @@ export type Zone = {
   swatch: string;
   facing?: Facing;
   exhibitor?: Exhibitor;
+  tier?: Tier;
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -155,7 +154,7 @@ export const ZONES: Zone[] = [
       id: `p${i + 1}`, group: "booth", tag: `P${pad(i + 1)}`, x, y, w, d, facing, exhibitor: ex,
       swatch: i === 0 ? GOLD : "#D9D9D9",
       name: ex.name,
-      sub: { ar: `${ex.name.en} · ${ex.brands}`, en: `${ex.name.ar} · ${ex.brands}` },
+      sub: { ar: "متاح للحجز", en: "Available to book" },
       note: i === 0
         ? { ar: "الجناح المركزي المميز مقابل المدخل مباشرة، بمنصة دوّارة — مقترح للراعي الرئيسي.", en: "The featured centre pavilion facing the entrance, with a turntable — proposed for the main sponsor." }
         : { ar: `جناح وكيل بمساحة ${area} م² مع جدار خلفي يحمل الاسم ومنصة لسيارتين.`, en: `A ${area} m² dealer pavilion with a branded back wall and a platform for two cars.` },

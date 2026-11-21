@@ -17,10 +17,11 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
-import { ZONES } from "@/lib/expo";
+import { ZONES, type Tier } from "@/lib/expo";
+import { ZONES_V2 } from "@/lib/venue";
 import type { Locale } from "@/lib/i18n";
 import {
-  ENERGY_ROUTES, FLOODLIGHTS, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
+  BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
   STREET_LAMPS, VILLAGE, type Place,
 } from "@/lib/venue";
 
@@ -155,9 +156,9 @@ export class VenueScene2 {
     this.buildTent("media");
     this.buildGate();
     this.buildBooths();
+    this.buildBanks();
     this.buildEnergyPath();
     this.buildPoles();
-    this.buildPeople();
     this.buildSelection();
 
     // camera + controls
@@ -365,11 +366,11 @@ export class VenueScene2 {
     while (px > 12 && g.measureText(text).width > maxW) { px -= 2; g.font = `${weight} ${px}px ${this.fontFor(text)}`; }
   }
 
-  private signTexture(main: string, sub: string, w = 1024, h = 256, bg = "#0d1217") {
+  private signTexture(main: string, sub: string, w = 1024, h = 256, bg = "#0d1217", accent = "#22E0C8") {
     const { c, g } = canvas(w, h);
     g.fillStyle = bg;
     g.fillRect(0, 0, w, h);
-    g.fillStyle = "#22E0C8";
+    g.fillStyle = accent;
     g.fillRect(0, h - 10, w, 10);
     g.textAlign = "center";
     g.textBaseline = "middle";
@@ -377,7 +378,7 @@ export class VenueScene2 {
     this.fitText(g, main, 800, Math.round(h * 0.36), w - 80);
     g.fillText(main, w / 2, h * 0.4);
     if (sub) {
-      g.fillStyle = "#B6F23A";
+      g.fillStyle = accent;
       const s = /[؀-ۿ]/.test(sub) ? sub : sub.toUpperCase();
       this.fitText(g, s, 700, Math.round(h * 0.16), w - 120);
       g.fillText(s, w / 2, h * 0.74);
@@ -851,43 +852,95 @@ export class VenueScene2 {
   // ------------------------------------------------------------------ expo: booths
   private boothGroups = new Map<string, THREE.Group>();
 
+  private boothTier = new Map<string, Tier>();
+  private boothTop = new Map<string, number>();
+
   private buildBooths() {
     const colors = [0xe9eef2, 0x1a1d21, 0x8f1d1d, 0x22406e, 0x6c6f73, 0xf2f2f2, 0x2b2b2b, 0x3b6e8f, 0xbfc4c9, 0x34495e, 0x7a1616, 0xd9d9d9];
     const white = mat(0xf1f3f4, { roughness: 0.45 });
     const dark = mat(0x0f1317, { roughness: 0.5 });
+    const gloss = mat(0x0b0e11, { roughness: 0.16, metalness: 0.35 });
+    const gold = mat(0xc9a14a, { roughness: 0.28, metalness: 1 });
     const floor = mat(0x23272c, { roughness: 0.7 });
     const carpet = mat(0x15181c, { roughness: 1 });
-    const strip = this.glow(TEAL, 0.7, 2.4);
+    const spec: Record<Tier, { plat: number; wallH: number; wall: THREE.Material; side: THREE.Material; fascia: THREE.Material; strip: THREE.Material }> = {
+      regular: { plat: 0.18, wallH: 3.4, wall: white, side: white, fascia: dark, strip: this.glow(TEAL, 0.7, 2.4) },
+      golden: { plat: 0.22, wallH: 3.6, wall: white, side: gold, fascia: gold, strip: this.glow(0xffc35a, 0.8, 2.4) },
+      premium: { plat: 0.34, wallH: 4.6, wall: gloss, side: gloss, fascia: gloss, strip: this.glow(LIME, 0.9, 2.8) },
+    };
     ZONES.filter((z) => z.group === "booth").forEach((zone, i) => {
       const p = PLACES[zone.id];
       if (!p) return;
+      const tier = TIERS[zone.id] ?? "regular";
+      this.boothTier.set(zone.id, tier);
       const g = this.placed(p);
       this.boothGroups.set(zone.id, g);
       if (p.kind === "hub") { this.buildHub(g, p, zone.id); return; }
       const { w, d } = p;
-      this.add(g, this.rbox(w, 0.18, d, 0.05), floor, 0, 0.09, 0, zone.id);
-      this.add(g, new THREE.BoxGeometry(w - 0.2, 0.01, d - 0.2), carpet, 0, 0.185, 0).castShadow = false;
-      this.add(g, new THREE.BoxGeometry(w, 0.05, 0.05), strip, 0, 0.16, d / 2 + 0.01);
-      for (const sx of [-1, 1]) this.add(g, new THREE.BoxGeometry(0.05, 0.05, d), strip, sx * (w / 2 + 0.01), 0.16, 0);
-      // back wall, fascia, side return, counter
-      this.add(g, this.rbox(w, 3.4, 0.24, 0.05), white, 0, 0.18 + 1.7, -d / 2 + 0.12, zone.id);
-      this.add(g, this.rbox(w + 0.1, 0.75, 0.36, 0.04), dark, 0, 0.18 + 3.4 + 0.2, -d / 2 + 0.2, zone.id);
-      this.add(g, this.rbox(0.2, 2.6, d * 0.42, 0.04), white, w / 2 - 0.1, 0.18 + 1.3, -d / 2 + d * 0.21, zone.id);
-      this.add(g, this.rbox(1.6, 1.05, 0.62, 0.06), white, -w / 2 + 1.2, 0.18 + 0.525, d / 2 - 0.75, zone.id);
-      this.add(g, new THREE.BoxGeometry(1.62, 0.06, 0.64), strip, -w / 2 + 1.2, 0.18 + 0.9, d / 2 - 0.75);
+      const S = spec[tier], b = S.plat;
+      this.boothTop.set(zone.id, b + S.wallH);
+      this.add(g, this.rbox(w, b, d, 0.05), floor, 0, b / 2, 0, zone.id);
+      this.add(g, new THREE.BoxGeometry(w - 0.2, 0.01, d - 0.2), carpet, 0, b + 0.005, 0).castShadow = false;
+      this.add(g, new THREE.BoxGeometry(w, 0.05, 0.05), S.strip, 0, b - 0.02, d / 2 + 0.01);
+      for (const sx of [-1, 1]) this.add(g, new THREE.BoxGeometry(0.05, 0.05, d), S.strip, sx * (w / 2 + 0.01), b - 0.02, 0);
+      // back wall, fascia, side return
+      this.add(g, this.rbox(w, S.wallH, 0.24, 0.05), S.wall, 0, b + S.wallH / 2, -d / 2 + 0.12, zone.id);
+      this.add(g, this.rbox(w + 0.1, 0.75, 0.36, 0.04), S.fascia, 0, b + S.wallH + 0.2, -d / 2 + 0.2, zone.id);
+      this.add(g, this.rbox(0.2, 2.6, d * 0.42, 0.04), S.side, w / 2 - 0.1, b + 1.3, -d / 2 + d * 0.21, zone.id);
+      if (tier === "premium") {
+        // LED line along the top of the wall and down both edges
+        this.add(g, new THREE.BoxGeometry(w - 0.2, 0.06, 0.04), S.strip, 0, b + S.wallH - 0.3, -d / 2 + 0.26);
+        for (const sx of [-1, 1]) this.add(g, new THREE.BoxGeometry(0.06, S.wallH - 0.4, 0.04), S.strip, sx * (w / 2 - 0.15), b + S.wallH / 2, -d / 2 + 0.26);
+      }
+      if (tier === "golden") this.add(g, new THREE.BoxGeometry(w, 0.12, 0.26), gold, 0, b + 0.06, -d / 2 + 0.12);
       const n = w >= 7.5 ? 2 : 1;
+      // info stand at the front edge
+      const sx0 = n === 2 ? 0 : -2.4;
+      this.add(g, this.rbox(0.6, 1.05, 0.4, 0.05), tier === "premium" ? gloss : white, sx0, b + 0.525, d / 2 - 0.45, zone.id);
+      this.add(g, new THREE.BoxGeometry(0.62, 0.05, 0.42), S.strip, sx0, b + 0.9, d / 2 - 0.45);
       for (let k = 0; k < n; k++) {
         const car = new THREE.Group();
         car.userData.zone = zone.id;
-        const cx = n === 2 ? (k ? 1.8 : -1.6) : 0.2;
-        const cz = n === 2 ? (k ? 1.55 : -0.6) : 0.4;
-        car.position.set(cx, 0.18, cz);
-        car.rotation.y = n === 2 ? (k ? -0.32 : 0.28) : 0.2;
+        const cx = n === 2 ? (k ? 2 : -2) : 0.4;
+        car.position.set(cx, b, -0.15);
         g.add(car);
         this.carSlots.push({ g: car, color: colors[(i * 2 + k) % colors.length], hero: false });
-        this.charger(g, cx + (k ? 1.6 : -1.7), -d / 2 + 0.7, { x: cx + (k ? 0.9 : -0.9), z: cz - 0.7 }, zone.id);
+        const px = n === 2 ? (k ? 0.45 : -0.45) : -1.6;
+        this.charger(g, px, -d / 2 + 0.55, { x: n === 2 ? cx + (k ? -0.6 : 0.6) : cx - 0.6, z: -1.6 }, zone.id, 1.5, b);
+        if (n === 1) this.charger(g, 2.3, -d / 2 + 0.55, { x: cx + 0.6, z: -1.6 }, zone.id, 1.5, b); // keep two posts per pavilion
       }
     });
+  }
+
+  // ------------------------------------------------------------------ banks avenue
+  private bankGroups = new Map<string, THREE.Group>();
+
+  private buildBanks() {
+    const white = mat(0xf1f3f4, { roughness: 0.45 });
+    const dark = mat(0x12171c, { roughness: 0.5 });
+    const blue = this.glow(0x5aa8ff, 0.8, 2.4);
+    const post = mat(0xc9d2da, { metalness: 0.8, roughness: 0.3 });
+    const stool = mat(0x2a3138, { roughness: 0.6 });
+    const screen = new THREE.MeshStandardMaterial({ color: 0x050a10, emissive: 0x1b4f8f, emissiveIntensity: 0.6, roughness: 0.2 });
+    this.glowMats.push({ m: screen, day: 0.6, night: 1.4 });
+    for (const zone of ZONES_V2.filter((z) => z.group === "bank")) {
+      const p = PLACES[zone.id];
+      const g = this.placed(p);
+      this.bankGroups.set(zone.id, g);
+      const { w, d } = p;
+      this.add(g, this.rbox(w, 0.15, d, 0.04), dark, 0, 0.075, 0, zone.id);
+      this.add(g, new THREE.BoxGeometry(w, 0.05, 0.05), blue, 0, 0.13, d / 2 + 0.01);
+      this.add(g, this.rbox(w, 2.7, 0.18, 0.04), white, 0, 0.15 + 1.35, -d / 2 + 0.09, zone.id);
+      this.add(g, new THREE.PlaneGeometry(1.5, 0.85), screen, 0, 1.75, -d / 2 + 0.19).castShadow = false;
+      // canopy on two front posts
+      for (const sx of [-1, 1]) this.add(g, new THREE.CylinderGeometry(0.04, 0.04, 2.7, 8), post, sx * (w / 2 - 0.1), 1.5, d / 2 - 0.1);
+      this.add(g, this.rbox(w + 0.2, 0.12, d + 0.2, 0.04), white, 0, 2.91, 0, zone.id);
+      this.add(g, this.rbox(w + 0.22, 0.5, 0.12, 0.03), dark, 0, 2.7, d / 2 + 0.12, zone.id);
+      // desk and two visitor stools
+      this.add(g, this.rbox(1.6, 0.95, 0.6, 0.05), white, 0, 0.15 + 0.475, -0.1, zone.id);
+      this.add(g, new THREE.BoxGeometry(1.62, 0.05, 0.62), blue, 0, 0.15 + 0.8, -0.1);
+      for (const sx of [-0.45, 0.45]) this.add(g, new THREE.CylinderGeometry(0.2, 0.18, 0.65, 14), stool, sx, 0.15 + 0.325, 0.75);
+    }
   }
 
   private buildHub(g: THREE.Group, p: Place, id: string) {
@@ -910,17 +963,17 @@ export class VenueScene2 {
 
   private chargerGlow: THREE.MeshStandardMaterial | null = null;
 
-  private charger(parent: THREE.Object3D, x: number, z: number, port: { x: number; z: number }, zone: string, h = 1.5) {
+  private charger(parent: THREE.Object3D, x: number, z: number, port: { x: number; z: number }, zone: string, h = 1.5, base = 0.18) {
     this.chargerGlow ||= this.glow(TEAL, 1.4, 3.2);
     const body = mat(0xf3f5f6, { roughness: 0.3 });
     const dark = mat(0x0e1216, { roughness: 0.35 });
-    this.add(parent, this.rbox(0.42, h, 0.32, 0.06), body, x, 0.18 + h / 2, z, zone);
-    this.add(parent, new THREE.BoxGeometry(0.3, 0.38, 0.02), dark, x, 0.18 + h * 0.72, z + 0.17);
-    this.add(parent, new THREE.BoxGeometry(0.06, h * 0.45, 0.02), this.chargerGlow, x - 0.13, 0.18 + h * 0.4, z + 0.17);
+    this.add(parent, this.rbox(0.42, h, 0.32, 0.06), body, x, base + h / 2, z, zone);
+    this.add(parent, new THREE.BoxGeometry(0.3, 0.38, 0.02), dark, x, base + h * 0.72, z + 0.17);
+    this.add(parent, new THREE.BoxGeometry(0.06, h * 0.45, 0.02), this.chargerGlow, x - 0.13, base + h * 0.4, z + 0.17);
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(x, 0.18 + h * 0.5, z + 0.18),
-      new THREE.Vector3((x + port.x) / 2, 0.22, (z + port.z) / 2 + 0.3),
-      new THREE.Vector3(port.x, 0.85, port.z),
+      new THREE.Vector3(x, base + h * 0.5, z + 0.18),
+      new THREE.Vector3((x + port.x) / 2, base + 0.04, (z + port.z) / 2 + 0.3),
+      new THREE.Vector3(port.x, base + 0.67, port.z),
     ]);
     this.add(parent, new THREE.TubeGeometry(curve, 24, 0.028, 6, false), dark);
   }
@@ -932,7 +985,8 @@ export class VenueScene2 {
       const p = PLACES[zone.id];
       if (!g || !p) return;
       const ex = zone.exhibitor!;
-      const t = this.signTexture(ex.name[l], ex.name[l === "ar" ? "en" : "ar"]);
+      const tier = this.boothTier.get(zone.id) ?? "regular";
+      const t = this.signTexture(ex.name[l], ex.name[l === "ar" ? "en" : "ar"], 1024, 256, tier === "golden" ? "#17120a" : "#0d1217", TIER_COLOR[tier]);
       const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.35, roughness: 0.5 });
       this.glowMats.push({ m, day: 0.35, night: 1 });
       if (p.kind === "hub") {
@@ -948,14 +1002,25 @@ export class VenueScene2 {
         g.add(back);
         return;
       }
-      const s = this.add(g, new THREE.PlaneGeometry(p.w - 0.3, 0.62), m, 0, 0.18 + 3.6, -p.d / 2 + 0.39, zone.id);
+      const top = this.boothTop.get(zone.id) ?? 3.58;
+      const s = this.add(g, new THREE.PlaneGeometry(p.w - 0.3, 0.62), m, 0, top + 0.2, -p.d / 2 + 0.39, zone.id);
       s.castShadow = false;
+      if (!ex.brands) return;
       // logo light box on the back wall
       const mark = this.signTexture(ex.brands, "", 1024, 400, "#0f151b");
       const lm = new THREE.MeshStandardMaterial({ map: mark, emissive: 0xffffff, emissiveMap: mark, emissiveIntensity: 0.45, roughness: 0.4 });
       this.glowMats.push({ m: lm, day: 0.45, night: 1.1 });
       this.add(g, new THREE.PlaneGeometry(2.6, 1.0), lm, -0.6, 0.18 + 2.1, -p.d / 2 + 0.25, zone.id).castShadow = false;
     });
+    for (const zone of ZONES_V2.filter((z) => z.group === "bank")) {
+      const g = this.bankGroups.get(zone.id);
+      if (!g) continue;
+      const p = PLACES[zone.id];
+      const t = this.signTexture(zone.name[l], zone.name[l === "ar" ? "en" : "ar"], 1024, 160, "#0d1217", BANK_COLOR);
+      const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.35, roughness: 0.5 });
+      this.glowMats.push({ m, day: 0.35, night: 1 });
+      this.add(g, new THREE.PlaneGeometry(p.w, 0.47), m, 0, 2.7, p.d / 2 + 0.185, zone.id).castShadow = false;
+    }
     if (this.gateGroup) {
       const [main, sub] = l === "ar" ? ["معرض فلسطين للسيارات الكهربائية 2027", "Electric & Plug-in · 1–7 May 2027"] : ["Palestine EV & Plug-in Expo 2027", "السيارات الكهربائية والهجينة · 1–7 أيار"];
       const t = this.signTexture(main, sub, 2048, 160);
@@ -971,7 +1036,7 @@ export class VenueScene2 {
     }
   }
 
-  // ------------------------------------------------------------------ energy path, poles, people
+  // ------------------------------------------------------------------ energy path, poles
   private buildEnergyPath() {
     const geo = new THREE.PlaneGeometry(0.22, 0.95);
     for (const route of ENERGY_ROUTES) {
@@ -1029,43 +1094,6 @@ export class VenueScene2 {
     }
   }
 
-  private buildPeople() {
-    // architectural-model figures for scale: white, matte, simple
-    const body = new THREE.CapsuleGeometry(0.16, 0.95, 4, 8).translate(0, 0.66, 0);
-    const head = new THREE.SphereGeometry(0.11, 10, 8).translate(0, 1.47, 0);
-    const fig = mergeGeometries([body.toNonIndexed(), head.toNonIndexed()]);
-    const r = rng(21);
-    const blocked = Object.values(PLACES).map((p) => ({ p, pad: 0.6 }));
-    const free = (x: number, z: number) => {
-      if (!insideLot(x, z)) return false;
-      for (const { p, pad } of blocked) {
-        const a = p.rot * DEG, dx = x - p.x, dz = z - p.z;
-        const lx = dx * Math.cos(a) + dz * Math.sin(a), lz = -dx * Math.sin(a) + dz * Math.cos(a);
-        if (Math.abs(lx) < p.w / 2 + pad && Math.abs(lz) < p.d / 2 + pad) return false;
-      }
-      return true;
-    };
-    const pts: [number, number][] = [];
-    let guard = 0;
-    while (pts.length < (this.mobile ? 40 : 70) && guard++ < 5000) {
-      const x = 2 + r() * 58, z = 2 + r() * 61;
-      if (free(x, z)) pts.push([x, z]);
-    }
-    const im = new THREE.InstancedMesh(fig, mat(0xc9ced3, { roughness: 0.9 }), pts.length);
-    const o = new THREE.Object3D();
-    pts.forEach(([x, z], i) => {
-      const s = 0.92 + r() * 0.16;
-      o.position.set(x, 0, z);
-      o.scale.set(s, s, s);
-      o.rotation.y = r() * Math.PI * 2;
-      o.updateMatrix();
-      im.setMatrixAt(i, o.matrix);
-    });
-    im.castShadow = true;
-    im.receiveShadow = true;
-    this.layout.add(im);
-  }
-
   // ------------------------------------------------------------------ cars
   private loadCars() {
     const loader = new GLTFLoader();
@@ -1104,7 +1132,7 @@ export class VenueScene2 {
             m.material = cache.get(mt) as THREE.Material;
           }
         });
-        c.rotation.y = Math.PI / 2;
+        c.position.z = -0.24; // centre the body on its slot
         c.scale.setScalar(1.02);
         slot.g.add(c);
       }
@@ -1116,12 +1144,12 @@ export class VenueScene2 {
   // ------------------------------------------------------------------ pins & selection
   private buildPins() {
     const l = this.opts.locale;
-    for (const z of ZONES) {
+    for (const z of ZONES_V2) {
       const p = PLACES[z.id];
       if (!p) continue;
       const el = document.createElement("button");
       el.type = "button";
-      el.className = `venue-pin venue-pin--${z.group}`;
+      el.className = `venue-pin venue-pin--${z.group}${z.tier ? ` venue-pin--${z.tier}` : ""}`;
       el.setAttribute("aria-label", z.name[l]);
       const tag = document.createElement("span");
       tag.className = "venue-pin__tag";
@@ -1132,7 +1160,7 @@ export class VenueScene2 {
       el.append(tag, name);
       el.addEventListener("click", (e) => { e.stopPropagation(); this.opts.onSelect(z.id); });
       const obj = new CSS2DObject(el);
-      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "hub" ? 7 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : 5.2;
+      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "hub" ? 7 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : p.kind === "bank" ? 3.9 : (this.boothTop.get(z.id) ?? 3.6) + 1.6;
       obj.position.set(p.x, h, p.z);
       this.pinGroup.add(obj);
       this.pins.set(z.id, el);

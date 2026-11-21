@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Globe, LocateFixed, MapPin, Moon, PlugZap, Search, Sun, X, Zap } from "lucide-react";
 import { LOT_AREA, type Zone, type ZoneGroup } from "@/lib/expo";
-import { CHARGERS_V2, SEATS_V2, ZONES_V2 } from "@/lib/venue";
+import { BANK_COLOR, CHARGERS_V2, SEATS_V2, TIER_COLOR, TIER_LABEL, ZONES_V2 } from "@/lib/venue";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { useVenueScene2 } from "@/components/venue/useVenueScene2";
 import type { LayerKey, ViewKey } from "@/components/venue/scene2";
@@ -13,14 +13,14 @@ import { EvMark } from "./EvMark";
 const VIEW_KEYS: ViewKey[] = ["perspective", "top", "gate", "seats"];
 const LAYER_KEYS: LayerKey[] = ["labels", "lines", "surroundings"];
 type Filter = "all" | ZoneGroup;
-const FILTERS: Filter[] = ["all", "booth", "prog", "svc"];
+const FILTERS: Filter[] = ["all", "booth", "bank", "prog", "svc"];
 
 const ZONES = ZONES_V2;
 const ZONE_MAP: Record<string, Zone> = Object.fromEntries(ZONES.map((z) => [z.id, z]));
 /** 2 posts per dealer pavilion + 2 fast chargers at the centre pavilion. */
 const CHARGERS = CHARGERS_V2;
 
-const EV_SWATCH = (z: Zone) => (z.group === "booth" ? (z.id === "p1" ? "#B6F23A" : "#22E0C8") : z.group === "prog" ? "#7C8CFF" : "#8FA3B5");
+const EV_SWATCH = (z: Zone) => (z.tier ? TIER_COLOR[z.tier] : z.group === "bank" ? BANK_COLOR : z.group === "prog" ? "#7C8CFF" : "#8FA3B5");
 
 export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
   const e = t.ev, v = t.venue;
@@ -96,6 +96,10 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
       <div className="ev__legend" aria-hidden="true">
         <span><i className="ev-dot ev-dot--teal" />{e.legendChargers}</span>
         <span><i className="ev-dot ev-dot--lime" />{e.legendPath}</span>
+        {(["premium", "golden", "regular"] as const).map((k) => (
+          <span key={k}><i className="ev-dot" style={{ background: TIER_COLOR[k] }} />{TIER_LABEL[k][lang]}</span>
+        ))}
+        <span><i className="ev-dot" style={{ background: BANK_COLOR }} />{e.legendBanks}</span>
       </div>
 
       <div className="ev__layers">
@@ -137,6 +141,7 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
             <div className="ev-sel__pills">
               <span dir="ltr">{z.w} × {z.d} m</span>
               <span dir="ltr">{area(z.w, z.d)}</span>
+              {z.tier && <span style={{ color: TIER_COLOR[z.tier] }}>{TIER_LABEL[z.tier][lang]}</span>}
               {z.group === "booth" && <span className="ev-sel__charge"><Zap size={12} aria-hidden="true" />{z.id === "p1" ? "DC × 2" : "AC × 2"}</span>}
             </div>
             <p>{z.note[lang]}</p>
