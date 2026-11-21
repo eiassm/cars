@@ -217,10 +217,11 @@ export class VenueScene {
     this.buildGate();
     this.buildMasts();
     this.buildSelection();
+    if (this.th.ev) this.buildEnergyPath();
 
     this.composer = new EffectComposer(R);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.8, 0.5, 1.0));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), this.th.ev ? 0.55 : 0.8, 0.5, 1.0));
     this.composer.addPass(new OutputPass());
 
     this.ro = new ResizeObserver(() => this.fit());
@@ -288,7 +289,7 @@ export class VenueScene {
     this.selFill.scale.set(w, d, 1);
     this.selFill.position.set(cx, 0.17, cz);
     this.selGroup.visible = true;
-    this.goal = { t: new THREE.Vector3(cx, 1, cz), r: Math.max(22, Math.max(z.w, z.d) * 2.6), phi: 0.88, th: this.orb.th };
+    this.goal = { t: new THREE.Vector3(cx, 1, cz), r: Math.max(this.th.ev ? 30 : 22, Math.max(z.w, z.d) * 2.6), phi: 0.88, th: this.orb.th };
   }
 
   dispose() {
@@ -337,14 +338,25 @@ export class VenueScene {
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillStyle = "#ffffff";
-    g.font = `800 ${o.fs}px ${this.fontFor(main)}`;
+    this.fitFont(g, main, 800, o.fs, o.w - 60);
     g.fillText(main, o.w / 2, sub ? o.h * 0.4 : o.h / 2);
     if (sub) {
       g.fillStyle = this.th.css.sub;
-      g.font = `700 ${o.fs2}px ${this.fontFor(sub)}`;
-      g.fillText(/[؀-ۿ]/.test(sub) ? sub : sub.toUpperCase(), o.w / 2, o.h * 0.76);
+      const subText = /[؀-ۿ]/.test(sub) ? sub : sub.toUpperCase();
+      this.fitFont(g, subText, 700, o.fs2, o.w - 60);
+      g.fillText(subText, o.w / 2, o.h * 0.76);
     }
     return canvasTexture(c);
+  }
+
+  /** Sets the largest font (up to `size`) at which `text` fits in `maxW` pixels. */
+  private fitFont(g: CanvasRenderingContext2D, text: string, weight: number, size: number, maxW: number) {
+    let px = size;
+    g.font = `${weight} ${px}px ${this.fontFor(text)}`;
+    while (px > 12 && g.measureText(text).width > maxW) {
+      px -= 2;
+      g.font = `${weight} ${px}px ${this.fontFor(text)}`;
+    }
   }
 
   private fontFor(s: string) {
@@ -370,11 +382,12 @@ export class VenueScene {
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillStyle = "#fff";
-    g.font = `800 62px ${this.fontFor(main)}`;
+    this.fitFont(g, main, 800, 62, W - 56);
     g.fillText(main, W / 2, H * 0.4);
     g.fillStyle = this.th.css.accent;
-    g.font = `700 30px ${this.fontFor(sub)}`;
-    g.fillText(/[؀-ۿ]/.test(sub) ? sub : sub.toUpperCase(), W / 2, H * 0.76);
+    const subText = /[؀-ۿ]/.test(sub) ? sub : sub.toUpperCase();
+    this.fitFont(g, subText, 700, 30, W - 64);
+    g.fillText(subText, W / 2, H * 0.76);
     // Constant on-screen size, so labels stay readable from the aerial views.
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(c), depthTest: false, transparent: true, sizeAttenuation: false }));
     sp.scale.set(0.2 * scale, 0.0625 * scale, 1);
@@ -968,6 +981,13 @@ export class VenueScene {
         this.scene.add(car);
         this.spin.push(car);
         for (const sx of [-1, 1]) this.pickable(this.box(0.5, 4.2, 0.5, gold, c.x + sx * 3.6, 2.1, c.z - 2.6), z.id);
+        if (this.th.ev) {
+          // fast-charging hub: two tall DC chargers either side of the turntable
+          const hub = new THREE.Group();
+          hub.position.set(c.x, 0.14, c.z);
+          this.scene.add(hub);
+          for (const sx of [-1, 1]) this.charger(hub, sx * 3.6, 1.6, { x: sx * 1.4, z: 0.2 }, z.id, 2.1);
+        }
         this.centreSign = new THREE.Vector3(c.x, 4.6, c.z - 2.6);
         return;
       }
@@ -997,6 +1017,7 @@ export class VenueScene {
         car.position.set(k ? 1.6 : -1.6, 0.14, k ? D * 0.68 : D * 0.33);
         car.rotation.y = k ? -0.25 : 0.25;
         g.add(car);
+        if (this.th.ev) this.charger(g, k ? 2.85 : -2.85, 0.55, { x: car.position.x + (k ? 1.2 : -1.2), z: car.position.z - 0.75 }, z.id);
       }
       (this.boothGroups ||= {})[z.id] = g;
     });
@@ -1038,6 +1059,63 @@ export class VenueScene {
       p.position.copy(P(28.1, 53.5 + side * 0.36, 5.6));
       if (side < 0) p.rotation.y = Math.PI;
       this.scene.add(p);
+    }
+  }
+
+  /** A charging post (in the parent's local frame) with a cable to the car's charge port. */
+  private charger(parent: THREE.Object3D, x: number, z: number, port: { x: number; z: number }, zone: string, h = 1.45) {
+    this.chargerGlow ||= new THREE.MeshStandardMaterial({ color: 0x0b2b2a, emissive: this.th.stripGlow, emissiveIntensity: 1.2, roughness: 0.3 });
+    const body = new THREE.MeshStandardMaterial({ color: 0xf1f4f6, metalness: 0.2, roughness: 0.35 });
+    const dark = std(0x10161c, { roughness: 0.4 });
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.42, h, 0.3), body);
+    post.position.set(x, h / 2, z);
+    post.castShadow = true;
+    parent.add(post);
+    this.pickable(post, zone);
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.36, 0.02), dark);
+    screen.position.set(x, h * 0.72, z + 0.16);
+    parent.add(screen);
+    const ring = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.32), this.chargerGlow);
+    ring.position.set(x, h - 0.06, z);
+    parent.add(ring);
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.06, h * 0.5, 0.02), this.chargerGlow);
+    led.position.set(x, h * 0.4, z + 0.16);
+    parent.add(led);
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(x, h * 0.5, z + 0.18),
+      new THREE.Vector3((x + port.x) / 2, 0.12, (z + port.z) / 2 + 0.2),
+      new THREE.Vector3(port.x, 0.75, port.z),
+    ]);
+    const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.03, 6, false), dark);
+    cable.castShadow = true;
+    parent.add(cable);
+  }
+
+  /** Glowing chevrons on the floor from the gate, around the centre pavilion, to the stage seating. */
+  private buildEnergyPath() {
+    const routes: [number, number][][] = [
+      [[28.2, 52.5], [28.2, 45.3], [24.3, 44.6], [24.3, 30.5], [28.4, 27.8]],
+      [[28.2, 45.3], [36, 44.6], [36, 30.5], [33.6, 27.8]],
+    ];
+    const tileGeo = new THREE.PlaneGeometry(0.26, 0.9);
+    for (const route of routes) {
+      for (let s = 0; s < route.length - 1; s++) {
+        const [ax, ay] = route[s], [bx, by] = route[s + 1];
+        const len = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.floor(len / 1.25));
+        const ang = Math.atan2(bx - ax, by - ay);
+        for (let k = 0; k < n; k++) {
+          const f = (k + 0.5) / n;
+          for (const side of [-1, 1]) {
+            const m = new THREE.Mesh(tileGeo, new THREE.MeshStandardMaterial({ color: 0x0d2a24, emissive: this.th.stripGlow, emissiveIntensity: 0.4, transparent: true, opacity: 0.95 }));
+            m.rotation.x = -Math.PI / 2;
+            m.rotation.z = ang + Math.PI + side * 0.75;
+            const p = P(ax + (bx - ax) * f, ay + (by - ay) * f, 0.03);
+            m.position.set(p.x + Math.cos(ang) * side * 0.22, p.y, p.z - Math.sin(ang) * side * 0.22);
+            this.scene.add(m);
+            this.flowTiles.push(m);
+          }
+        }
+      }
     }
   }
 
@@ -1123,12 +1201,13 @@ export class VenueScene {
     this.nightOnly.forEach((l) => (l.visible = n));
     this.renderer.toneMappingExposure = n ? 1.15 : 1.0;
     this.lampMat.emissiveIntensity = n ? 3 : 0;
-    this.mastLamp.emissiveIntensity = n ? 3 : 0;
+    this.mastLamp.emissiveIntensity = n ? (this.th.ev ? 1.6 : 3) : 0;
     this.stripMat.emissiveIntensity = n ? 2.4 : 0;
     this.ledMat.emissiveIntensity = n ? 1.4 : 0.9;
     this.bldMat.emissiveIntensity = n ? 0.85 : 0;
     this.signs.forEach((m) => (m.emissiveIntensity = n ? 0.9 : 0.25));
     this.emissive.forEach((m) => (m.emissiveIntensity = n ? 2.2 : 0.4));
+    if (this.chargerGlow) this.chargerGlow.emissiveIntensity = n ? 3 : 1.2;
   }
 
   // ---------- camera + input ----------
@@ -1242,6 +1321,15 @@ export class VenueScene {
     else c.up.set(0, 1, 0);
     c.lookAt(o.t);
     this.spin.forEach((s) => (s.rotation.y += dt * 0.35));
+    if (this.flowTiles.length) {
+      // a pulse runs along the energy path from the gate towards the stage
+      const t = performance.now() / 1000;
+      const base = this.night ? 0.5 : 0.25, peak = this.night ? 4 : 1.6;
+      this.flowTiles.forEach((m, i) => {
+        const ph = ((t * 6 - Math.floor(i / 2) * 0.55) % 9 + 9) % 9;
+        (m.material as THREE.MeshStandardMaterial).emissiveIntensity = base + peak * Math.max(0, 1 - ph / 2.2);
+      });
+    }
     if (this.selGroup.visible) this.selMat.opacity = 0.65 + 0.35 * Math.sin(performance.now() / 260);
     if (this.night && this.composer) this.composer.render();
     else this.renderer.render(this.scene, c);
