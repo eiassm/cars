@@ -3,7 +3,7 @@
 Website and interactive 3D floor plan for the expo at the Ramallah Sports Village parking yard, 1–7 May 2027.
 
 - `/ar`, `/en` — event website (Arabic is the default; `/` redirects to `/ar`)
-- `/ar/floor-plan`, `/en/floor-plan` — 3D venue plan (three.js)
+- `/ar/ev`, `/en/ev` — interactive 3D plan, EV & plug-in edition (three.js); `/[lang]/floor-plan` redirects here
 
 No database yet: the visit registration form only shows a confirmation on the device.
 

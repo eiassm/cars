@@ -31,7 +31,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
   if (!hasLocale(lang)) notFound();
   const t = getDictionary(lang);
   const Forward = t.dir === "rtl" ? ArrowLeft : ArrowRight;
-  const floorPlan = `/${lang}/floor-plan`;
+  const floorPlan = `/${lang}/ev`;
 
   return (
     <>
