@@ -144,3 +144,18 @@ html[lang="en"] .ev-stat__value { justify-content: flex-start; }
   .ev__layers { bottom: 70px; max-width: calc(100% - 28px); }
   .ev__open { top: auto; bottom: 14px; inset-inline-end: 14px; }
 }
+
+/* v2 pins: a small tag; the name appears on hover, focus or selection */
+.venue-pins { z-index: 1; }
+.venue-pin { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; border-radius: 999px; border: 1px solid rgba(var(--ev-teal-rgb), 0.5); background: rgba(6, 12, 18, 0.78); color: #fff; font: 700 11px/1 var(--font-grotesk), var(--font-montserrat), sans-serif; cursor: pointer; white-space: nowrap; transform: translateY(-50%); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: background 0.15s, border-color 0.15s; }
+.venue-pin__tag { letter-spacing: 0.04em; color: var(--ev-teal); }
+.venue-pin__name { display: none; font-family: var(--font-cairo), sans-serif; font-weight: 700; font-size: 12px; }
+.venue-pin:hover .venue-pin__name, .venue-pin:focus-visible .venue-pin__name, .venue-pin.is-active .venue-pin__name { display: inline; }
+.venue-pin:hover, .venue-pin.is-active { background: rgba(6, 12, 18, 0.94); border-color: var(--ev-teal); }
+.venue-pin.is-active { box-shadow: 0 0 0 3px rgba(var(--ev-teal-rgb), 0.25), 0 4px 14px rgba(0, 0, 0, 0.35); }
+.venue-pin--booth .venue-pin__tag { color: var(--ev-lime); }
+.venue-pin--prog { border-color: rgba(124, 140, 255, 0.6); }
+.venue-pin--prog .venue-pin__tag { color: #aab4ff; }
+/* CSS2DRenderer positions pins by transform from the top-left; keep that origin in RTL too */
+.venue-pins { direction: ltr; }
+.venue-pins > .venue-pin { left: 0; top: 0; }

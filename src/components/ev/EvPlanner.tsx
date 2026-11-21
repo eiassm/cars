@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Globe, LocateFixed, MapPin, Moon, PlugZap, Search, Sun, X, Zap } from "lucide-react";
-import { LOT_AREA, SEATS, ZONES, ZONE_MAP, type Zone, type ZoneGroup } from "@/lib/expo";
+import { LOT_AREA, type Zone, type ZoneGroup } from "@/lib/expo";
+import { CHARGERS_V2, SEATS_V2, ZONES_V2 } from "@/lib/venue";
 import type { Dictionary, Locale } from "@/lib/i18n";
-import { useVenueScene } from "@/components/venue/useVenueScene";
-import type { LayerKey, ViewKey } from "@/components/venue/scene";
+import { useVenueScene2 } from "@/components/venue/useVenueScene2";
+import type { LayerKey, ViewKey } from "@/components/venue/scene2";
 import { EvMark } from "./EvMark";
 
 const VIEW_KEYS: ViewKey[] = ["perspective", "top", "gate", "seats"];
@@ -14,21 +15,29 @@ const LAYER_KEYS: LayerKey[] = ["labels", "lines", "surroundings"];
 type Filter = "all" | ZoneGroup;
 const FILTERS: Filter[] = ["all", "booth", "prog", "svc"];
 
+const ZONES = ZONES_V2;
+const ZONE_MAP: Record<string, Zone> = Object.fromEntries(ZONES.map((z) => [z.id, z]));
 /** 2 posts per dealer pavilion + 2 fast chargers at the centre pavilion. */
-const CHARGERS = ZONES.filter((z) => z.group === "booth").length * 2;
+const CHARGERS = CHARGERS_V2;
 
 const EV_SWATCH = (z: Zone) => (z.group === "booth" ? (z.id === "p1" ? "#B6F23A" : "#22E0C8") : z.group === "prog" ? "#7C8CFF" : "#8FA3B5");
 
 export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
   const e = t.ev, v = t.venue;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { sceneRef, status, sel, setSel } = useVenueScene(canvasRef, lang, "ev");
+  const { sceneRef, status, sel, setSel } = useVenueScene2(canvasRef, lang);
   const [view, setView] = useState<ViewKey>("perspective");
-  const [night, setNight] = useState(true);
+  const [night, setNight] = useState(false);
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({ labels: true, lines: false, surroundings: true });
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [menuOpen, setMenuOpen] = useState(true);
+  // phones: start with the 3D in view; the menu opens from its button
+  useEffect(() => {
+    if (window.innerWidth >= 700) return;
+    const t = setTimeout(() => setMenuOpen(false), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   // Push UI state into the scene once it is ready, and whenever it changes.
   useEffect(() => { sceneRef.current?.setNight(night); }, [sceneRef, night, status]);
@@ -52,7 +61,7 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
   const stats = [
     { value: String(CHARGERS), label: e.stats.chargers, icon: <PlugZap size={16} aria-hidden="true" /> },
     { value: "12", label: e.stats.booths },
-    { value: String(SEATS.length), label: e.stats.seats },
+    { value: String(SEATS_V2.length), label: e.stats.seats },
     { value: `≈ ${(Math.round(LOT_AREA / 50) * 50).toLocaleString("en-US")} m²`, label: e.stats.area },
   ];
 
