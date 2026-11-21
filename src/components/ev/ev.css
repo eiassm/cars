@@ -166,3 +166,26 @@ html[lang="en"] .ev-stat__value { justify-content: flex-start; }
 .venue-pin--bank { border-color: rgba(90, 168, 255, 0.7); }
 .venue-pin--bank .venue-pin__tag { color: #5AA8FF; }
 .ev__legend { max-width: 260px; }
+
+/* visitor journey */
+.ev-journey-btn { color: #032019 !important; background: var(--ev-lime) !important; border-color: var(--ev-lime) !important; font-weight: 800 !important; }
+.ev-journey-btn::before { display: none; }
+.ev-journey-btn[aria-pressed="true"] { background: #fff !important; border-color: #fff !important; }
+.ev-tour { position: absolute; z-index: 4; bottom: 66px; inset-inline-start: 14px; width: min(420px, calc(100% - 28px)); padding: 16px 18px; border-radius: 18px; background: linear-gradient(165deg, rgba(182, 242, 58, 0.16), rgba(8, 15, 22, 0.94) 60%); border: 1px solid rgba(182, 242, 58, 0.55); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: #fff; }
+.ev-tour__head { display: flex; align-items: center; gap: 10px; }
+.ev-tour__count { font: 800 12px/1 var(--font-grotesk), sans-serif; color: var(--ev-lime); letter-spacing: 0.06em; }
+.ev-tour__dots { display: flex; gap: 5px; flex: 1; }
+.ev-tour__dots button { width: 18px; height: 4px; border-radius: 4px; border: 0; padding: 0; background: rgba(255, 255, 255, 0.18); cursor: pointer; }
+.ev-tour__dots .is-done { background: rgba(182, 242, 58, 0.5); }
+.ev-tour__dots .is-on { background: var(--ev-lime); width: 28px; }
+.ev-tour h2 { margin: 10px 0 4px; font-size: 20px; font-weight: 800; }
+.ev-tour p { margin: 0; font-size: 14px; line-height: 1.6; color: #c7d6de; }
+.ev-tour__nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; }
+.ev-tour__nav button { height: 40px; padding: 0 16px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ev-tour__prev { background: transparent; color: #fff; border: 1px solid var(--ev-line-2); }
+.ev-tour__prev:disabled { opacity: 0.35; cursor: default; }
+.ev-tour__next { background: var(--ev-lime); color: #0b1a02; border: 0; }
+@media (max-width: 700px) {
+  .ev-tour { bottom: 120px; }
+}
+.ev-list__head { display: block; margin: 12px 4px 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ev-faint); }

@@ -30,40 +30,56 @@ export type Facing = "in" | "c";
  * A placed rectangle in the layout frame: centre, size along its own x (w) and z (d), and its angle in degrees
  * measured from layout +x towards +z (three.js yaw = −rot). A booth's back wall is on its own −z side.
  */
-export type Place = { x: number; z: number; w: number; d: number; rot: number; kind: "stage" | "seats" | "foh" | "tent" | "gate" | "booth" | "hub" | "bank" };
+export type Place = { x: number; z: number; w: number; d: number; rot: number; kind: "stage" | "seats" | "foh" | "tent" | "gate" | "booth" | "hub" | "bank" | "food" | "wc" };
 
+/**
+ * Layout v3 — one visitor loop, nothing sellable in a corner.
+ * Gate (east) → hub → premium by the gate → north row → food court (NW corner anchor) → stage and seats →
+ * cross aisle → south row → back to the gate. The central island sits on the hub-to-stage axis, with the
+ * finance court (banks) in its middle. Corners hold services that pull people through: food (NW),
+ * restrooms (SW), VIP and backstage beside the stage.
+ */
 export const PLACES: Record<string, Place> = {
   stage: { x: 5.5, z: 30, w: 8, d: 16, rot: 0, kind: "stage" },
   seats: { x: 16.3, z: 30, w: 8.6, d: 20.8, rot: 0, kind: "seats" }, // 297 seats (−30% from 420)
-  foh: { x: 23.8, z: 30, w: 3, d: 3.5, rot: 0, kind: "foh" },
+  foh: { x: 23.6, z: 30, w: 3, d: 3.5, rot: 0, kind: "foh" },
   vip: { x: 5, z: 16, w: 8, d: 7, rot: 0, kind: "tent" },
   media: { x: 5, z: 44, w: 8, d: 7, rot: 0, kind: "tent" },
   gate: { x: 57.4, z: 45.5, w: 4, d: 19, rot: 17, kind: "gate" },
-  // p1 = featured centre pavilion facing the entrance
-  p1: { x: 45, z: 43, w: 8, d: 8, rot: 0, kind: "hub" },
-  // top row, back walls along the curved top edge
-  p2: { x: 3.6, z: 5.3, w: 8, d: 6.5, rot: 7.1, kind: "booth" },
-  p3: { x: 12.1, z: 6.4, w: 8, d: 6.5, rot: 7.1, kind: "booth" },
-  p4: { x: 22.6, z: 9.4, w: 8, d: 6.5, rot: 23.5, kind: "booth" },
-  p5: { x: 45.2, z: 22.7, w: 8, d: 6.5, rot: 44.6, kind: "booth" },
-  p6: { x: 53.6, z: 31.3, w: 6.5, d: 7, rot: 0, kind: "booth" },
-  // middle
-  p7: { x: 34, z: 25.3, w: 8, d: 6.5, rot: 0, kind: "booth" },
-  p8: { x: 34, z: 39.3, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  // bottom row, back walls along the bottom edge
-  p9: { x: 8, z: 56.8, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p10: { x: 18, z: 56.8, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p11: { x: 28, z: 57.2, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p12: { x: 38, z: 56.8, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  // banks avenue: car-finance kiosks on the walkway along the courts, facing into the yard
-  ...Object.fromEntries(Array.from({ length: 6 }, (_, i) => [`b${i + 1}`, { x: -5, z: 42 + i * 4, w: 3, d: 3, rot: -90, kind: "bank" as const }])),
+  // hub on the main axis, first thing past the gate
+  p1: { x: 46, z: 36.5, w: 8, d: 8, rot: -90, kind: "hub" }, // sign at its west side, read from the gate
+  // premium spot right beside the gate, back to edge 5→6
+  p2: { x: 56.14, z: 30.99, w: 8, d: 6.5, rot: 68.96, kind: "booth" },
+  // north row, backs to the curved edge, facing the north aisle
+  p3: { x: 46.07, z: 21.81, w: 8, d: 6.5, rot: 44.6, kind: "booth" },
+  p4: { x: 37.73, z: 15.3, w: 8, d: 6.5, rot: 32.25, kind: "booth" },
+  p5: { x: 29.29, z: 10.66, w: 8, d: 6.5, rot: 23.47, kind: "booth" },
+  p6: { x: 21.63, z: 7.33, w: 8, d: 6.5, rot: 23.47, kind: "booth" },
+  // central island: P07 faces the north aisle, P08 the south aisle
+  p7: { x: 33.5, z: 26.25, w: 8, d: 6.5, rot: 180, kind: "booth" },
+  p8: { x: 33.5, z: 44.75, w: 8, d: 6.5, rot: 0, kind: "booth" },
+  // south row, backs to the bottom edge, facing the south aisle (the way back to the gate)
+  p9: { x: 16.5, z: 56.75, w: 8, d: 6.5, rot: 180, kind: "booth" },
+  p10: { x: 26, z: 57, w: 8, d: 6.5, rot: 180, kind: "booth" },
+  p11: { x: 35.5, z: 57, w: 8, d: 6.5, rot: 180, kind: "booth" },
+  p12: { x: 44.5, z: 56.75, w: 8, d: 6.5, rot: 180, kind: "booth" },
+  // finance court: two rows of bank kiosks facing each other across the hub-to-stage axis
+  b1: { x: 30.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
+  b2: { x: 33.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
+  b3: { x: 36.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
+  b4: { x: 30.5, z: 40, w: 3, d: 3, rot: 180, kind: "bank" },
+  b5: { x: 33.5, z: 40, w: 3, d: 3, rot: 180, kind: "bank" },
+  b6: { x: 36.5, z: 40, w: 3, d: 3, rot: 180, kind: "bank" },
+  // corner anchors
+  food: { x: 8.3, z: 6.2, w: 14.5, d: 9.5, rot: 7.1, kind: "food" },
+  wc: { x: 5, z: 54.5, w: 7, d: 9, rot: 0, kind: "wc" },
 };
 
-/** Booth tiers: premium = best spots with the boldest build, golden = gold finish, regular = standard shell. */
+/** Tiers follow foot traffic: premium on the axis and at the gate, golden on the busiest aisle fronts. */
 export const TIERS: Record<string, Tier> = {
-  p1: "premium", p6: "premium",
-  p2: "golden", p3: "golden", p4: "golden", p5: "golden",
-  p7: "regular", p8: "regular", p9: "regular", p10: "regular", p11: "regular", p12: "regular",
+  p1: "premium", p2: "premium",
+  p3: "golden", p7: "golden", p8: "golden", p12: "golden",
+  p4: "regular", p5: "regular", p6: "regular", p9: "regular", p10: "regular", p11: "regular",
 };
 
 export const TIER_LABEL: Record<Tier, { ar: string; en: string }> = {
@@ -91,10 +107,18 @@ export const SEATS_V2: [number, number, number][] = (() => {
 
 /** Energy path (chevrons) from the gate, around the centre pavilion, to the audience. */
 export const ENERGY_ROUTES: [number, number][][] = [
-  [[55.5, 46], [50.8, 50.5], [26, 50.5], [24.8, 42.2]],
-  [[55.5, 46], [50.8, 37], [40, 33], [26, 33]],
-  [[26, 50.5], [-2.2, 50.5]], // branch to the banks avenue
+  // gate → north aisle → behind the seats → south aisle → back to the gate
+  [[55.5, 46.5], [51.5, 43.5], [52, 37.5], [50.5, 30.5], [46, 27.5], [39, 21.5], [30, 19.2], [26, 20.5], [27, 27], [27, 46], [29, 50.7], [50, 50.7], [55, 48]],
+  // the axis: hub → finance court → seats
+  [[41.3, 35.5], [26.2, 35.5]],
+  // spur to the food court
+  [[26, 19.4], [20, 14.5], [15, 12]],
+  // spur to the restrooms
+  [[28.5, 50.7], [10, 51]],
 ];
+
+/** Planters that fill the leftover corners. */
+export const PLANTERS: [number, number][] = [[54.2, 25.6], [51.6, 55.8], [21.5, 51], [40.5, 47.5], [26.5, 23.5], [10.5, 61]];
 
 /** Sports Village neighbours in the layout frame (x < 0 is beyond the straight edge). */
 export const VILLAGE = {
@@ -105,7 +129,7 @@ export const VILLAGE = {
   pitch: { x: -92, z: 30, w: 64, d: 100 },
 };
 
-export const FLOODLIGHTS: [number, number][] = [[-3.5, 4], [-3.5, 24], [-3.5, 36], [-36, 0], [-36, 40], [-36, 80], [-124, 0], [-124, 60]];
+export const FLOODLIGHTS: [number, number][] = [[-3.5, 4], [-3.5, 24], [-3.5, 44], [-36, 0], [-36, 40], [-36, 80], [-124, 0], [-124, 60]];
 export const STREET_LAMPS: [number, number][] = [[20, 4.6], [44, 14.2], [58, 27.5], [50, 59.5], [24, 63], [2, 61]];
 
 export const CHARGERS_V2 = 12 * 2;
@@ -117,6 +141,19 @@ const TIER_NOTE: Record<Tier, { ar: string; en: string }> = {
   regular: { ar: "جناح عادي: هيكل أبيض قياسي مع لوحة اسم وجدار خلفي.", en: "Regular pavilion: standard white shell with a name board and back wall." },
 };
 
+const SERVICE_ZONES: Zone[] = [
+  {
+    id: "food", group: "svc", tag: "F&B", x: 0, y: 0, w: 14.5, d: 9.5, swatch: "#F2994A",
+    name: { ar: "ساحة الطعام والقهوة", en: "Food & coffee court" }, sub: { ar: "Food & coffee court", en: "ساحة الطعام والقهوة" },
+    note: { ar: "ثلاث عربات طعام وقهوة مع طاولات ومظلات في الزاوية الشمالية الغربية — تسحب الزوار عبر الممر الشمالي.", en: "Three food and coffee trucks with shaded tables in the north-west corner — it pulls visitors along the north aisle." },
+  },
+  {
+    id: "wc", group: "svc", tag: "WC", x: 0, y: 0, w: 7, d: 9, swatch: "#8FA3B5",
+    name: { ar: "دورات المياه والإسعاف", en: "Restrooms & first aid" }, sub: { ar: "Restrooms & first aid", en: "دورات المياه والإسعاف" },
+    note: { ar: "وحدتا دورات مياه متنقلة ونقطة إسعاف أولي في الزاوية الجنوبية الغربية بجانب الكواليس.", en: "Two mobile restroom units and a first-aid point in the south-west corner, beside backstage." },
+  },
+];
+
 const BANK_ZONES: Zone[] = Array.from({ length: 6 }, (_, i) => {
   const n = String(i + 1).padStart(2, "0");
   return {
@@ -124,8 +161,8 @@ const BANK_ZONES: Zone[] = Array.from({ length: 6 }, (_, i) => {
     name: { ar: `بنك ${n}`, en: `Bank ${n}` },
     sub: { ar: "تمويل السيارات · متاح للحجز", en: "Car finance · Available to book" },
     note: {
-      ar: "كشك بنكي 3 × 3 م في ممر البنوك بجانب الملاعب: مكتب استقبال، مقعدان وشاشة لعروض تمويل السيارات الكهربائية.",
-      en: "A 3 × 3 m bank kiosk on the banks avenue beside the courts: a desk, two seats and a screen for EV finance offers.",
+      ar: "كشك بنكي 3 × 3 م في ساحة التمويل وسط المعرض، على المحور بين الجناح المركزي والمسرح: مكتب، مقعدان وشاشة لعروض تمويل السيارات الكهربائية.",
+      en: "A 3 × 3 m bank kiosk in the finance court at the heart of the expo, on the axis between the centre pavilion and the stage: a desk, two seats and a screen for EV finance offers.",
     },
   };
 });
@@ -144,4 +181,5 @@ export const ZONES_V2: Zone[] = [
     };
   }),
   ...BANK_ZONES,
+  ...SERVICE_ZONES,
 ];

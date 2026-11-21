@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Globe, LocateFixed, MapPin, Moon, PlugZap, Search, Sun, X, Zap } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Footprints, Globe, LocateFixed, MapPin, Moon, PlugZap, Search, Sun, X, Zap } from "lucide-react";
 import { LOT_AREA, type Zone, type ZoneGroup } from "@/lib/expo";
 import { BANK_COLOR, CHARGERS_V2, SEATS_V2, TIER_COLOR, TIER_LABEL, ZONES_V2 } from "@/lib/venue";
 import type { Dictionary, Locale } from "@/lib/i18n";
@@ -32,6 +32,15 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [menuOpen, setMenuOpen] = useState(true);
+  const [tour, setTour] = useState<number | null>(null);
+  const steps = e.journey.steps;
+  const goStep = (i: number | null) => {
+    setTour(i);
+    if (i === null) return;
+    const id = steps[i].id;
+    setSel(id);
+    sceneRef.current?.select(id);
+  };
   // phones: start with the 3D in view; the menu opens from its button
   useEffect(() => {
     if (window.innerWidth >= 700) return;
@@ -49,7 +58,9 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ZONES.filter((zz) => (filter === "all" || zz.group === filter))
+    const order: ZoneGroup[] = ["booth", "bank", "prog", "svc"];
+    return [...ZONES].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group))
+      .filter((zz) => (filter === "all" || zz.group === filter))
       .filter((zz) => !q || [zz.name.ar, zz.name.en, zz.tag, zz.exhibitor?.brands ?? "", zz.exhibitor?.city.ar ?? "", zz.exhibitor?.city.en ?? ""].some((s) => s.toLowerCase().includes(q)));
   }, [query, filter]);
 
@@ -106,8 +117,37 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
         {LAYER_KEYS.map((k) => (
           <button key={k} type="button" aria-pressed={layers[k]} onClick={() => toggleLayer(k)}>{v.layers[k]}</button>
         ))}
-        <span className="ev__hint">{e.hint}</span>
+        <button type="button" className="ev-journey-btn" aria-pressed={tour !== null} onClick={() => goStep(tour === null ? 0 : null)}>
+          <Footprints size={15} aria-hidden="true" />{e.journey.start}
+        </button>
+        {tour === null && <span className="ev__hint">{e.hint}</span>}
       </div>
+
+      {tour !== null && (
+        <section className="ev-tour" aria-live="polite" aria-label={e.journey.start}>
+          <div className="ev-tour__head">
+            <span className="ev-tour__count" dir="ltr">{tour + 1} / {steps.length}</span>
+            <div className="ev-tour__dots" aria-hidden="true">
+              {steps.map((s, i) => <button key={s.id} type="button" tabIndex={-1} className={i === tour ? "is-on" : i < tour ? "is-done" : ""} onClick={() => goStep(i)} />)}
+            </div>
+            <button type="button" className="ev-icon" aria-label={e.journey.close} onClick={() => goStep(null)}><X size={16} aria-hidden="true" /></button>
+          </div>
+          <h2>{steps[tour].title}</h2>
+          <p>{steps[tour].text}</p>
+          <div className="ev-tour__nav">
+            <button type="button" className="ev-tour__prev" disabled={tour === 0} onClick={() => goStep(tour - 1)}>
+              {lang === "ar" ? <ChevronRight size={16} aria-hidden="true" /> : <ChevronLeft size={16} aria-hidden="true" />}{e.journey.prev}
+            </button>
+            {tour < steps.length - 1 ? (
+              <button type="button" className="ev-tour__next" onClick={() => goStep(tour + 1)}>
+                {e.journey.next}{lang === "ar" ? <ChevronLeft size={16} aria-hidden="true" /> : <ChevronRight size={16} aria-hidden="true" />}
+              </button>
+            ) : (
+              <button type="button" className="ev-tour__next" onClick={() => { goStep(null); setSel(null); goView("perspective"); }}>{e.journey.done}</button>
+            )}
+          </div>
+        </section>
+      )}
 
       {!menuOpen && (
         <button type="button" className="ev__open" onClick={() => setMenuOpen(true)} aria-expanded={false} aria-controls="ev-menu">
@@ -163,8 +203,9 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
         </div>
 
         <ul className="ev-list">
-          {list.map((zz) => (
+          {list.map((zz, i) => (
             <li key={zz.id}>
+              {filter === "all" && !query && (i === 0 || list[i - 1].group !== zz.group) && <span className="ev-list__head">{e.filters[zz.group]}</span>}
               <button type="button" aria-pressed={sel === zz.id} onClick={() => pick(zz.id)}>
                 <span className="ev-tag" dir="ltr" style={{ background: EV_SWATCH(zz) }}>{zz.tag}</span>
                 <span className="ev-list__name">

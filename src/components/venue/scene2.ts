@@ -21,7 +21,7 @@ import { ZONES, type Tier } from "@/lib/expo";
 import { ZONES_V2 } from "@/lib/venue";
 import type { Locale } from "@/lib/i18n";
 import {
-  BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
+  BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, PLANTERS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
   STREET_LAMPS, VILLAGE, type Place,
 } from "@/lib/venue";
 
@@ -157,6 +157,9 @@ export class VenueScene2 {
     this.buildGate();
     this.buildBooths();
     this.buildBanks();
+    this.buildFoodCourt();
+    this.buildRestrooms();
+    this.buildPlanters();
     this.buildEnergyPath();
     this.buildPoles();
     this.buildSelection();
@@ -286,13 +289,20 @@ export class VenueScene2 {
     if (!id || !PLACES[id]) { if (this.sel) this.sel.group.visible = false; return; }
     const p = PLACES[id];
     this.placeSelection(p);
-    const target = this.L(p.x, p.kind === "stage" ? 2 : 0.8, p.z);
-    const off = this.camera.position.clone().sub(this.controls.target);
-    off.y = Math.max(off.y, 6);
-    const dist = Math.max(18, Math.max(p.w, p.d) * 2.6);
-    off.setLength(dist);
-    if (off.y < dist * 0.45) { off.y = dist * 0.55; off.setLength(dist); }
-    this.flyTo(target.clone().add(off), target, 1.1);
+    // look at the side visitors see: a booth's open front, the stage from the audience, the gate from inside
+    const a = p.rot * DEG;
+    const side = ["stage", "tent", "wc", "seats", "foh"].includes(p.kind) ? [Math.cos(a), Math.sin(a)]
+      : p.kind === "gate" ? [-Math.cos(a), -Math.sin(a)]
+      : [-Math.sin(a), Math.cos(a)];
+    const turn = 0.45; // three-quarter view
+    const fx = side[0] * Math.cos(turn) - side[1] * Math.sin(turn), fz = side[0] * Math.sin(turn) + side[1] * Math.cos(turn);
+    let dist = p.kind === "bank" ? 17 : p.kind === "seats" ? 26 : Math.max(13, Math.max(p.w, p.d) * 1.9);
+    const host = this.cv.parentElement as HTMLElement;
+    if (host.clientWidth < host.clientHeight) dist *= 1.6; // portrait: step back so the whole booth fits
+    const ty = p.kind === "stage" ? 2.5 : p.kind === "gate" ? 3 : 0.9;
+    const target = this.L(p.x, ty, p.z);
+    const pos = this.L(p.x + fx * dist * 0.82, ty + dist * 0.55, p.z + fz * dist * 0.82);
+    this.flyTo(pos, target, 1.2);
   }
 
   dispose() {
@@ -912,6 +922,96 @@ export class VenueScene2 {
     });
   }
 
+  // ------------------------------------------------------------------ corner anchors
+  private labelTexture(text: string, bg: string, fg = "#ffffff", w = 512, h = 128) {
+    const { c, g } = canvas(w, h);
+    g.fillStyle = bg;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = fg;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    this.fitText(g, text, 800, Math.round(h * 0.5), w - 40);
+    g.fillText(text, w / 2, h / 2 + 2);
+    return tex(c);
+  }
+
+  private buildFoodCourt() {
+    const p = PLACES.food;
+    const g = this.placed(p);
+    const ar = this.opts.locale === "ar";
+    // timber deck
+    const deck = canvas(256, 256);
+    deck.g.fillStyle = "#b08a62"; deck.g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 16; i++) { deck.g.fillStyle = i % 2 ? "rgba(70,45,25,.18)" : "rgba(255,240,220,.08)"; deck.g.fillRect(0, i * 16, 256, 15); }
+    this.add(g, this.rbox(p.w, 0.12, p.d, 0.04), new THREE.MeshStandardMaterial({ map: tex(deck.c, true, [p.w / 3, p.d / 3]), roughness: 0.85 }), 0, 0.06, 0, "food");
+    // three trucks along the back wall, hatches facing the tables
+    const trucks: [string, number][] = [[ar ? "قهوة" : "Coffee", 0x2f6b5a], [ar ? "برغر" : "Burgers", 0xb9473a], [ar ? "حلويات" : "Desserts", 0xd7a43a]];
+    const dark = mat(0x111418, { roughness: 0.5 });
+    const tyre = mat(0x16181b, { roughness: 0.9 });
+    trucks.forEach(([label, color], k) => {
+      const x = -4.8 + k * 4.8, z = -p.d / 2 + 1.4;
+      const body = mat(color, { roughness: 0.35, metalness: 0.1 });
+      this.add(g, this.rbox(4.2, 2.3, 2.1, 0.25), body, x, 0.12 + 0.35 + 1.15, z, "food");
+      this.add(g, new THREE.PlaneGeometry(2.6, 0.9), dark, x, 0.12 + 1.75, z + 1.06);
+      const awning = this.add(g, new THREE.BoxGeometry(2.9, 0.05, 1.0), mat(0xf4f1ea, { roughness: 0.6 }), x, 0.12 + 2.45, z + 1.45);
+      awning.rotation.x = 0.28;
+      this.add(g, new THREE.BoxGeometry(2.8, 0.08, 0.45), mat(0xf1f3f4, { roughness: 0.4 }), x, 0.12 + 1.28, z + 1.25);
+      for (const wx of [-1.3, 1.3]) this.add(g, new THREE.CylinderGeometry(0.33, 0.33, 0.25, 16).rotateX(Math.PI / 2), tyre, x + wx, 0.12 + 0.33, z + 1.06);
+      const t = this.labelTexture(label, "#0d1217");
+      const sm = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.3 });
+      this.glowMats.push({ m: sm, day: 0.3, night: 1 });
+      this.add(g, new THREE.BoxGeometry(2.4, 0.6, 0.08), dark, x, 0.12 + 2.95, z + 0.3);
+      this.add(g, new THREE.PlaneGeometry(2.3, 0.55), sm, x, 0.12 + 2.95, z + 0.35).castShadow = false;
+    });
+    // tables with four stools and a parasol
+    const top = mat(0xf2f2ee, { roughness: 0.5 }), leg = mat(0x2a2d31, { metalness: 0.5, roughness: 0.4 });
+    const canvasMat = new THREE.MeshStandardMaterial({ color: 0xf6f4ee, roughness: 0.7, side: THREE.DoubleSide });
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+      const x = -5.1 + c * 3.4 + (r ? 1.7 : 0), z = 1.1 + r * 2.6;
+      if (x > p.w / 2 - 1) continue;
+      this.add(g, new THREE.CylinderGeometry(0.45, 0.45, 0.04, 20), top, x, 0.12 + 0.74, z);
+      this.add(g, new THREE.CylinderGeometry(0.04, 0.04, 0.74, 8), leg, x, 0.12 + 0.37, z);
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2 + 0.4;
+        this.add(g, new THREE.CylinderGeometry(0.17, 0.15, 0.45, 12), leg, x + Math.cos(a) * 0.75, 0.12 + 0.225, z + Math.sin(a) * 0.75);
+      }
+      this.add(g, new THREE.CylinderGeometry(0.025, 0.025, 2.4, 6), leg, x, 0.12 + 1.2, z);
+      const umb = this.add(g, new THREE.ConeGeometry(1.25, 0.45, 8, 1, true), canvasMat, x, 0.12 + 2.35, z);
+      umb.castShadow = true;
+    }
+  }
+
+  private buildRestrooms() {
+    const p = PLACES.wc;
+    const g = this.placed(p);
+    const shell = mat(0xe9ecef, { roughness: 0.55 });
+    const door = mat(0x3d4a57, { roughness: 0.5 });
+    for (const [z, label] of [[-2.3, "WC"], [2.1, "WC"]] as const) {
+      this.add(g, this.rbox(2.6, 2.7, 4.0, 0.08), shell, -1.6, 1.35, z, "wc");
+      for (const dz of [-1.1, 0, 1.1]) this.add(g, new THREE.BoxGeometry(0.04, 2.0, 0.8), door, -0.29, 1.05, z + dz);
+      this.add(g, this.rbox(0.8, 0.3, 4.2, 0.05), mat(0xcfd5da), -1.6, 2.8, z);
+      const t = this.labelTexture(label, "#2a3b4c", "#ffffff", 256, 128);
+      this.add(g, new THREE.PlaneGeometry(0.9, 0.45), new THREE.MeshStandardMaterial({ map: t }), -0.28, 2.35, z).rotation.y = Math.PI / 2;
+    }
+    // first-aid point with a red cross
+    this.add(g, this.rbox(2.2, 2.4, 2.2, 0.08), mat(0xf6f6f4), 2.2, 1.2, -2.6, "wc");
+    const cross = mat(0xd0342c, { roughness: 0.5 });
+    this.add(g, new THREE.BoxGeometry(0.02, 0.7, 0.22), cross, 1.09, 1.7, -2.6);
+    this.add(g, new THREE.BoxGeometry(0.02, 0.22, 0.7), cross, 1.09, 1.7, -2.6);
+  }
+
+  private buildPlanters() {
+    const box = this.rbox(1.4, 0.6, 1.4, 0.08);
+    const boxMat = mat(0xd8d2c6, { roughness: 0.9 });
+    const leaf = mat(0x3f6b3a, { roughness: 0.95, flatShading: true });
+    const crown = new THREE.IcosahedronGeometry(0.75, 1);
+    for (const [x, z] of PLANTERS) {
+      this.add(this.layout, box, boxMat, x, 0.3, z);
+      this.add(this.layout, new THREE.CylinderGeometry(0.06, 0.08, 1.2, 6), mat(0x5a4632), x, 1.1, z);
+      this.add(this.layout, crown, leaf, x, 2.0, z).scale.set(1, 1.1, 1);
+    }
+  }
+
   // ------------------------------------------------------------------ banks avenue
   private bankGroups = new Map<string, THREE.Group>();
 
@@ -934,7 +1034,8 @@ export class VenueScene2 {
       this.add(g, new THREE.PlaneGeometry(1.5, 0.85), screen, 0, 1.75, -d / 2 + 0.19).castShadow = false;
       // canopy on two front posts
       for (const sx of [-1, 1]) this.add(g, new THREE.CylinderGeometry(0.04, 0.04, 2.7, 8), post, sx * (w / 2 - 0.1), 1.5, d / 2 - 0.1);
-      this.add(g, this.rbox(w + 0.2, 0.12, d + 0.2, 0.04), white, 0, 2.91, 0, zone.id);
+      // open-top frame so the desk stays visible from above
+      for (const sx of [-1, 1]) this.add(g, new THREE.BoxGeometry(0.08, 0.08, d), post, sx * (w / 2 - 0.1), 2.9, 0);
       this.add(g, this.rbox(w + 0.22, 0.5, 0.12, 0.03), dark, 0, 2.7, d / 2 + 0.12, zone.id);
       // desk and two visitor stools
       this.add(g, this.rbox(1.6, 0.95, 0.6, 0.05), white, 0, 0.15 + 0.475, -0.1, zone.id);
@@ -1160,7 +1261,7 @@ export class VenueScene2 {
       el.append(tag, name);
       el.addEventListener("click", (e) => { e.stopPropagation(); this.opts.onSelect(z.id); });
       const obj = new CSS2DObject(el);
-      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "hub" ? 7 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : p.kind === "bank" ? 3.9 : (this.boothTop.get(z.id) ?? 3.6) + 1.6;
+      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "hub" ? 7 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : p.kind === "bank" ? 3.9 : p.kind === "food" ? 4.6 : p.kind === "wc" ? 4 : (this.boothTop.get(z.id) ?? 3.6) + 1.6;
       obj.position.set(p.x, h, p.z);
       this.pinGroup.add(obj);
       this.pins.set(z.id, el);
