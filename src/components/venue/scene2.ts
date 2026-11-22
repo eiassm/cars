@@ -996,8 +996,8 @@ export class VenueScene2 {
     // first-aid point with a red cross
     this.add(g, this.rbox(2.2, 2.4, 2.2, 0.08), mat(0xf6f6f4), 2.2, 1.2, -2.6, "wc");
     const cross = mat(0xd0342c, { roughness: 0.5 });
-    this.add(g, new THREE.BoxGeometry(0.02, 0.7, 0.22), cross, 1.09, 1.7, -2.6);
-    this.add(g, new THREE.BoxGeometry(0.02, 0.22, 0.7), cross, 1.09, 1.7, -2.6);
+    this.add(g, new THREE.BoxGeometry(0.02, 0.7, 0.22), cross, 3.31, 1.7, -2.6);
+    this.add(g, new THREE.BoxGeometry(0.02, 0.22, 0.7), cross, 3.31, 1.7, -2.6);
   }
 
   private buildPlanters() {
@@ -1123,7 +1123,7 @@ export class VenueScene2 {
       this.add(g, new THREE.PlaneGeometry(p.w, 0.47), m, 0, 2.7, p.d / 2 + 0.185, zone.id).castShadow = false;
     }
     if (this.gateGroup) {
-      const [main, sub] = l === "ar" ? ["معرض فلسطين للسيارات الكهربائية 2027", "Electric & Plug-in · 1–7 May 2027"] : ["Palestine EV & Plug-in Expo 2027", "السيارات الكهربائية والهجينة · 1–7 أيار"];
+      const [main, sub] = l === "ar" ? ["معرض فلسطين للسيارات 2027", "Electric & Plug-in Hybrid · 1–7 May 2027"] : ["Palestine Auto Expo 2027", "السيارات الكهربائية والهجينة · 1–7 أيار"];
       const t = this.signTexture(main, sub, 2048, 160);
       const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.4 });
       this.glowMats.push({ m, day: 0.4, night: 1 });

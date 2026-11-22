@@ -19,7 +19,7 @@ const ar = {
   hero: {
     eyebrow: "1 – 7 أيار 2027 · القرية الرياضية · رام الله",
     title: "سبعة أيام. اثنا عشر وكيلاً. ساحة واحدة.",
-    sub: "من 1 إلى 7 أيار 2027 يتحوّل موقف القرية الرياضية في رام الله إلى معرض مفتوح يجمع وكلاء السيارات في فلسطين بأحدث موديلاتهم، مع عروض يومية على المسرح الرئيسي.",
+    sub: "معرض مفتوح للسيارات الكهربائية والهجينة القابلة للشحن، من 1 إلى 7 أيار 2027 في موقف القرية الرياضية، رام الله: 12 جناحاً للوكلاء، ساحة تمويل، ومسرح بعروض يومية.",
   },
   countdown: {
     before: "حتى الافتتاح",
@@ -61,8 +61,8 @@ const ar = {
     dayTitles: ["يوم الافتتاح", "اليوم الثاني", "اليوم الثالث", "اليوم الرابع", "اليوم الخامس", "اليوم السادس", "يوم الختام"],
     opening: "حفل الافتتاح الرسمي",
     closing: "حفل الختام",
-    slot: "[فقرة على المسرح]",
-    time: "[الوقت]",
+    slot: "فقرة تُعلن قريباً",
+    time: "—",
     stage: "المسرح الرئيسي",
   },
   weekdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
@@ -178,7 +178,7 @@ const en: Dictionary = {
   hero: {
     eyebrow: "1 – 7 May 2027 · Sports Village · Ramallah",
     title: "Seven days. Twelve dealers. One venue.",
-    sub: "From 1 to 7 May 2027 the Ramallah Sports Village parking yard becomes an open-air expo bringing together Palestine’s car dealers and their newest models, with shows on the main stage every day.",
+    sub: "An open-air expo for electric and plug-in hybrid cars, 1–7 May 2027 at the Sports Village parking yard, Ramallah: 12 dealer pavilions, a finance court and a stage with shows every day.",
   },
   countdown: {
     before: "Until opening",
@@ -220,8 +220,8 @@ const en: Dictionary = {
     dayTitles: ["Opening day", "Day two", "Day three", "Day four", "Day five", "Day six", "Closing day"],
     opening: "Official opening ceremony",
     closing: "Closing ceremony",
-    slot: "[Stage session]",
-    time: "[Time]",
+    slot: "Session to be announced",
+    time: "—",
     stage: "Main stage",
   },
   weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],

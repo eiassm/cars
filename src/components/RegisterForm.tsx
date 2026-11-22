@@ -81,7 +81,7 @@ export function RegisterForm({ t }: { t: Dictionary }) {
       {error && (
         <p className="form__error" role="alert"><Info size={16} aria-hidden="true" />{error === "name" ? r.errName : r.errPhone}</p>
       )}
-      <button type="submit" className="btn btn-gold">{r.submit}<Forward size={16} aria-hidden="true" /></button>
+      <button type="submit" className="btn btn-primary">{r.submit}<Forward size={16} aria-hidden="true" /></button>
     </form>
   );
 }

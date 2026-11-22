@@ -183,3 +183,13 @@ export const ZONES_V2: Zone[] = [
   ...BANK_ZONES,
   ...SERVICE_ZONES,
 ];
+
+/** Yard area from the traced outline (shoelace), rounded to 50 m². */
+export const YARD_AREA = (() => {
+  let a = 0;
+  for (let i = 0; i < LOT_LOCAL.length; i++) {
+    const [x1, z1] = LOT_LOCAL[i], [x2, z2] = LOT_LOCAL[(i + 1) % LOT_LOCAL.length];
+    a += x1 * z2 - x2 * z1;
+  }
+  return Math.round(Math.abs(a) / 2 / 50) * 50;
+})();

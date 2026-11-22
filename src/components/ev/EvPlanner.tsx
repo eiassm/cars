@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Footprints, Globe, LocateFixed, MapPin, Moon, PlugZap, Search, Sun, X, Zap } from "lucide-react";
-import { LOT_AREA, type Zone, type ZoneGroup } from "@/lib/expo";
-import { BANK_COLOR, CHARGERS_V2, SEATS_V2, TIER_COLOR, TIER_LABEL, ZONES_V2 } from "@/lib/venue";
+import { type Zone, type ZoneGroup } from "@/lib/expo";
+import { BANK_COLOR, CHARGERS_V2, SEATS_V2, TIER_COLOR, TIER_LABEL, YARD_AREA, ZONES_V2 } from "@/lib/venue";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { useVenueScene2 } from "@/components/venue/useVenueScene2";
 import type { LayerKey, ViewKey } from "@/components/venue/scene2";
@@ -48,6 +48,25 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Deep links from the website: ?zone=p3 opens a zone, ?tour=1 starts the journey, ?night=1 switches to evening.
+  useEffect(() => {
+    if (status !== "ready") return;
+    const q = new URLSearchParams(window.location.search);
+    const id = setTimeout(() => {
+      if (q.get("night") === "1") setNight(true);
+      const zone = q.get("zone");
+      if (q.get("tour") === "1") {
+        setTour(0);
+        setSel(steps[0].id);
+        sceneRef.current?.select(steps[0].id);
+      } else if (zone && ZONE_MAP[zone]) {
+        setSel(zone);
+        sceneRef.current?.select(zone);
+      }
+    }, 0);
+    return () => clearTimeout(id);
+  }, [status, sceneRef, setSel, steps]);
+
   // Push UI state into the scene once it is ready, and whenever it changes.
   useEffect(() => { sceneRef.current?.setNight(night); }, [sceneRef, night, status]);
   useEffect(() => { LAYER_KEYS.forEach((k) => sceneRef.current?.setLayer(k, layers[k])); }, [sceneRef, layers, status]);
@@ -73,7 +92,7 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
     { value: String(CHARGERS), label: e.stats.chargers, icon: <PlugZap size={16} aria-hidden="true" /> },
     { value: "12", label: e.stats.booths },
     { value: String(SEATS_V2.length), label: e.stats.seats },
-    { value: `≈ ${(Math.round(LOT_AREA / 50) * 50).toLocaleString("en-US")} m²`, label: e.stats.area },
+    { value: `≈ ${YARD_AREA.toLocaleString("en-US")} m²`, label: e.stats.area },
   ];
 
   return (
@@ -81,13 +100,13 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
       <canvas ref={canvasRef} className="ev__canvas" role="img" aria-label={v.canvasLabel} />
 
       <header className="ev__bar">
-        <div className="ev__brand">
+        <Link href={`/${lang}`} className="ev__brand" aria-label={t.brand}>
           <EvMark className="ev__mark" />
           <div className="ev__titles">
             <h1>{e.title}</h1>
-            <span className="ev__edition">{e.edition}</span>
+            <span className="ev__edition">{t.brand} · {e.edition}</span>
           </div>
-        </div>
+        </Link>
         <div className="ev__controls">
           <div className="ev-seg" role="group" aria-label={v.views.perspective}>
             {VIEW_KEYS.map((k) => (

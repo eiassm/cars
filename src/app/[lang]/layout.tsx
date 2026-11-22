@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   };
 }
 
-export const viewport: Viewport = { themeColor: "#0a0a0a", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#03121a", colorScheme: "dark" };
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const { lang } = await params;

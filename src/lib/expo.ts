@@ -29,7 +29,7 @@ export const EXHIBITORS: Exhibitor[] = Array.from({ length: 12 }, (_, i) => {
     name: { ar: `جناح ${n}`, en: `Pavilion ${n}` },
     city: { ar: "", en: "" },
     brands: "",
-    image: `/images/ex-${n}.webp`,
+    image: "",
   };
 });
 
