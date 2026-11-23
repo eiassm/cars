@@ -102,11 +102,7 @@ export function FloorMap({
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(zone.id); } }}
               >
                 <g transform={`translate(${p.x} ${p.z}) rotate(${p.rot})`}>
-                  {p.kind === "hub" ? (
-                    <circle r={p.w / 2} fill={c} fillOpacity={0.22} stroke={c} strokeWidth={active ? 0.6 : 0.3} />
-                  ) : (
-                    <rect x={-p.w / 2} y={-p.d / 2} width={p.w} height={p.d} rx="0.5" fill={c} fillOpacity={zone.group === "prog" || zone.group === "svc" ? 0.14 : 0.22} stroke={c} strokeWidth={active ? 0.6 : 0.3} />
-                  )}
+                  <rect x={-p.w / 2} y={-p.d / 2} width={p.w} height={p.d} rx="0.5" fill={c} fillOpacity={zone.group === "prog" || zone.group === "svc" ? 0.14 : 0.22} stroke={c} strokeWidth={active ? 0.6 : 0.3} />
                   {/* back wall */}
                   {(p.kind === "booth" || p.kind === "bank") && <line x1={-p.w / 2 + 0.3} y1={-p.d / 2 + 0.2} x2={p.w / 2 - 0.3} y2={-p.d / 2 + 0.2} stroke={c} strokeWidth="0.55" strokeLinecap="round" />}
                 </g>

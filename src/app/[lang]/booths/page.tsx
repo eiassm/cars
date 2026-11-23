@@ -33,8 +33,8 @@ export default async function Booths({ params }: PageProps<"/[lang]/booths">) {
     const spec = TIER_SPEC[tier];
     const spots = BOOTHS.filter((x) => x.tier === tier);
     switch (key) {
-      case "size": return tier === "premium" ? b.compare.sizeHub : "8 × 6.5 m";
-      case "area": return tier === "premium" ? "52–64 m²" : "52 m²";
+      case "size": return spec.size;
+      case "area": return `${spec.area} m²`;
       case "wall": return `${spec.wall} m`;
       case "platform": return `${Math.round(spec.platform * 100)} cm`;
       case "finish": return b.compare.finish[tier];

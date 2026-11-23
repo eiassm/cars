@@ -22,8 +22,8 @@ const ar = {
     hero: {
       kicker: "1 – 7 أيار 2027 · القرية الرياضية، رام الله",
       title: "السيارات الكهربائية والهجينة",
-      line: "معرض فلسطين للسيارات 2027 · 1–7 أيار",
-      body: "سبعة أيام في ساحة مفتوحة واحدة: اثنا عشر جناحاً للوكلاء بأحدث السيارات الكهربائية والهجينة القابلة للشحن، ساحة تمويل تجمع البنوك، ومسرح رئيسي بعروض وإطلاقات يومية.",
+      line: "أسبوع فلسطين للسيارات 2027 · 1–7 أيار",
+      body: "سبعة أيام في ساحة مفتوحة واحدة: ثلاثة عشر جناحاً للوكلاء بأحدث السيارات الكهربائية والهجينة القابلة للشحن، ساحة تمويل تجمع البنوك، ومسرح رئيسي بعروض وإطلاقات يومية.",
     },
     statsLabel: "المعرض بالأرقام",
     inside: {
@@ -31,7 +31,7 @@ const ar = {
       title: "كل ما تحتاجه في حلقة واحدة",
       body: "صُمّمت الساحة حول مسار زائر واحد باتجاه واحد من البوابة وإليها، بحيث يمرّ كل زائر أمام كل جناح وكل بنك.",
       cards: [
-        { key: "booths", title: "12 جناحاً للوكلاء", body: "ثلاث فئات — بريميوم وذهبي وعادي — لكل جناح سيارتان على منصة ونقطتا شحن واسم الوكيل على الواجهة.", href: "booths" },
+        { key: "booths", title: "13 جناحاً للوكلاء", body: "ثلاثة قياسات — كبير 10 × 5 م (بريميوم)، متوسط 8 × 5 م (ذهبي) وقياسي 6 × 5 م (عادي) — بارتفاع 3.5 م، مع نقطتي شحن واسم الوكيل على الواجهة.", href: "booths" },
         { key: "banks", title: "ساحة التمويل", body: "ستة أكشاك بنكية متقابلة في قلب المعرض على المحور بين الجناح المركزي والمسرح، لعروض تمويل السيارات الكهربائية.", href: "banks" },
         { key: "stage", title: "المسرح الرئيسي", body: "مسرح 16 × 8 م بشاشة LED كبيرة أمام 297 مقعداً، لإطلاقات السيارات والعروض اليومية.", href: "program" },
         { key: "food", title: "الطعام والخدمات", body: "ساحة طعام وقهوة بطاولات مظللة، دورات مياه ونقطة إسعاف، وصالة لكبار الضيوف بجانب المسرح.", href: "visit" },
@@ -86,36 +86,36 @@ const ar = {
   tiers: {
     premium: {
       name: "بريميوم",
-      tagline: "أفضل موقعين في المعرض",
-      points: ["الجناح المركزي على المحور الرئيسي بمنصة دوّارة، أو الجناح الملاصق للبوابة", "جدار خلفي أسود لامع بارتفاع 4.6 م مع إضاءة LED", "منصة مرتفعة 34 سم", "محطة في جولة الزائر"],
+      tagline: "جناح كبير 10 × 5 م في أفضل المواقع",
+      points: ["الجناح المركزي مقابل المدخل، والجناح الملاصق للبوابة، وأول جناح شمالي وآخر جناح قبل الخروج", "50 م² بارتفاع 3.5 م: سيارتان، ركن جلوس ومكتب استقبال", "جدار خلفي أسود لامع مع إضاءة LED", "منصة مرتفعة 22 سم"],
     },
     golden: {
       name: "ذهبي",
-      tagline: "واجهات أكثر الممرات ازدحاماً",
-      points: ["الجزيرة الوسطى، وأقرب جناح شمالي إلى المدخل، وآخر جناح قبل الخروج", "واجهة وحواف بلمسة ذهبية", "جدار خلفي 3.6 م ومنصة 22 سم"],
+      tagline: "جناح متوسط 8 × 5 م على أكثر الممرات ازدحاماً",
+      points: ["الجزيرة الوسطى والممران الشمالي والجنوبي", "40 م² بارتفاع 3.5 م: سيارتان ومنصة معلومات", "واجهة وحواف بلمسة ذهبية ومنصة 18 سم"],
     },
     regular: {
       name: "عادي",
-      tagline: "جناح كامل على مسار الزائر",
-      points: ["على الممرين الشمالي والجنوبي، يمرّ بها كل زائر", "هيكل أبيض قياسي بجدار 3.4 م ولوحة اسم", "منصة 18 سم وسجاد"],
+      tagline: "جناح قياسي 6 × 5 م على مسار الزائر",
+      points: ["على الممرين الشمالي والجنوبي، يمرّ بها كل زائر", "30 م² بارتفاع 3.5 م: سيارة واحدة ومكتب صغير", "هيكل أبيض قياسي بلوحة اسم، منصة 15 سم وسجاد"],
     },
     spots: "عدد المواقع",
     price: "السعر عند الطلب",
-    cars: "سيارتان على المنصة",
+    cars: { premium: "سيارتان على المنصة", golden: "سيارتان على المنصة", regular: "سيارة واحدة على المنصة" },
   },
   booths: {
     title: "الأجنحة",
     hero: {
       kicker: "اعرض في المعرض",
       title: "جناحك على مسار كل زائر",
-      body: "اثنا عشر جناحاً فقط، في ثلاث فئات، على حلقة واحدة من البوابة وإليها. لا أجنحة في الزوايا ولا ممرات ميتة.",
+      body: "ثلاثة عشر جناحاً فقط بثلاثة قياسات — 10 × 5 و8 × 5 و6 × 5 م — على حلقة واحدة من البوابة وإليها. لا أجنحة في الزوايا ولا ممرات ميتة.",
     },
     benefits: {
       kicker: "لماذا تعرض معنا",
       title: "ما يحصل عليه كل وكيل",
       items: [
         { title: "على المسار، لا في الزاوية", body: "كل جناح يواجه ممراً رئيسياً على حلقة الزائر، والزوايا مخصصة للخدمات التي تجذب الناس نحوها." },
-        { title: "سيارتان ونقطتا شحن", body: "مساحة لسيارتين على المنصة ونقطتا شحن في كل جناح، وشاحنان سريعان DC في الجناح المركزي." },
+        { title: "سيارات ونقطتا شحن", body: "سيارتان في الجناحين الكبير والمتوسط وسيارة في القياسي، مع نقطتي شحن في كل جناح." },
         { title: "التمويل على بعد خطوات", body: "ساحة التمويل وسط المعرض، فيستطيع المشتري أن ينتقل من سيارتك إلى البنك في الزيارة نفسها." },
         { title: "اسمك في كل مكان", body: "على واجهة الجناح، وفي المخطط ثلاثي الأبعاد، وفي خريطة المعرض على هذا الموقع." },
         { title: "سبعة أيام ومسرح", body: "من 1 إلى 7 أيار، مع إطلاقات وعروض يومية على المسرح الرئيسي." },
@@ -125,9 +125,8 @@ const ar = {
     compare: {
       kicker: "المقارنة",
       title: "الفئات الثلاث جنباً إلى جنب",
-      rows: { size: "القياس", area: "المساحة", wall: "ارتفاع الجدار الخلفي", platform: "ارتفاع المنصة", finish: "التشطيب", cars: "السيارات المعروضة", charging: "الشحن", spots: "المواقع", price: "السعر" },
+      rows: { size: "القياس", area: "المساحة", wall: "ارتفاع الجناح", platform: "ارتفاع المنصة", finish: "التشطيب", cars: "السيارات المعروضة", charging: "الشحن", spots: "المواقع", price: "السعر" },
       finish: { premium: "أسود لامع مع LED", golden: "واجهة وحواف ذهبية", regular: "هيكل أبيض قياسي" },
-      sizeHub: "8 × 8 م (المركزي) أو 8 × 6.5 م",
     },
     list: {
       kicker: "كل الأجنحة",
@@ -187,7 +186,7 @@ const ar = {
         { key: "food", title: "ساحة الطعام والقهوة", body: "ثلاث عربات للقهوة والطعام والحلويات مع طاولات مظللة في الزاوية الشمالية الغربية." },
         { key: "wc", title: "دورات المياه والإسعاف", body: "وحدتان لدورات المياه ونقطة إسعاف أولي في الزاوية الجنوبية الغربية." },
         { key: "stage", title: "المسرح والجلوس", body: "297 مقعداً أمام المسرح الرئيسي، مع ممر في الوسط." },
-        { key: "charge", title: "الشحن", body: "24 نقطة شحن معروضة داخل الأجنحة لتجربة الشحن على أرض الواقع." },
+        { key: "charge", title: "الشحن", body: "26 نقطة شحن معروضة داخل الأجنحة لتجربة الشحن على أرض الواقع." },
       ],
     },
     practical: {
@@ -225,7 +224,7 @@ const ar = {
     about: "معرض مفتوح للسيارات الكهربائية والهجينة القابلة للشحن في موقف القرية الرياضية، رام الله.",
     explore: "استكشف",
     dates: "1 – 7 أيار 2027",
-    rights: "© 2027 معرض فلسطين للسيارات",
+    rights: "© 2027 أسبوع فلسطين للسيارات",
   },
 };
 
@@ -252,8 +251,8 @@ const en: SiteDictionary = {
     hero: {
       kicker: "1 – 7 May 2027 · Sports Village, Ramallah",
       title: "Electric & Plug‑in Hybrid",
-      line: "Palestine Auto Expo 2027 · 1–7 May",
-      body: "Seven days in one open-air yard: twelve dealer pavilions with the latest electric and plug-in hybrid cars, a finance court that brings the banks together, and a main stage with launches every day.",
+      line: "Palestine Cars Week 2027 · 1–7 May",
+      body: "Seven days in one open-air yard: thirteen dealer stands with the latest electric and plug-in hybrid cars, a finance court that brings the banks together, and a main stage with launches every day.",
     },
     statsLabel: "The expo in numbers",
     inside: {
@@ -261,7 +260,7 @@ const en: SiteDictionary = {
       title: "Everything on one loop",
       body: "The yard is planned around a single one-way visitor route from the gate and back, so every visitor passes every pavilion and every bank.",
       cards: [
-        { key: "booths", title: "12 dealer pavilions", body: "Three tiers — Premium, Golden and Regular. Every pavilion has two cars on a platform, two charging posts and the dealer's name on the fascia.", href: "booths" },
+        { key: "booths", title: "13 dealer stands", body: "Three sizes — Large 10 × 5 m (Premium), Medium 8 × 5 m (Golden) and Standard 6 × 5 m (Regular) — all 3.5 m high, with two charging posts and the dealer's name on the fascia.", href: "booths" },
         { key: "banks", title: "Finance court", body: "Six bank kiosks facing each other at the heart of the expo, on the axis between the centre pavilion and the stage, for EV finance offers.", href: "banks" },
         { key: "stage", title: "Main stage", body: "A 16 × 8 m stage with a large LED wall in front of 297 seats, for car launches and daily shows.", href: "program" },
         { key: "food", title: "Food & services", body: "A food and coffee court with shaded tables, restrooms and first aid, and a VIP lounge beside the stage.", href: "visit" },
@@ -316,36 +315,36 @@ const en: SiteDictionary = {
   tiers: {
     premium: {
       name: "Premium",
-      tagline: "The two best spots in the expo",
-      points: ["The centre pavilion on the main axis with a turntable, or the pavilion right beside the gate", "4.6 m gloss-black back wall with LED lighting", "34 cm raised platform", "A stop on the visitor journey"],
+      tagline: "A Large 10 × 5 m stand in the best spots",
+      points: ["The centre stand facing the gate, the stand beside the gate, the first north stand and the last stand before the exit", "50 m², 3.5 m high: two cars, a lounge and a reception desk", "Gloss-black back wall with LED lighting", "22 cm raised platform"],
     },
     golden: {
       name: "Golden",
-      tagline: "Fronts on the busiest aisles",
-      points: ["The central island, the north pavilion closest to the gate, and the last pavilion before the exit", "Gold-finish fascia and trims", "3.6 m back wall, 22 cm platform"],
+      tagline: "A Medium 8 × 5 m stand on the busiest aisles",
+      points: ["The central island and the north and south aisles", "40 m², 3.5 m high: two cars and an info podium", "Gold-finish fascia and trims, 18 cm platform"],
     },
     regular: {
       name: "Regular",
-      tagline: "A full pavilion on the visitor route",
-      points: ["On the north and south aisles, passed by every visitor", "Standard white shell with a 3.4 m wall and name board", "18 cm platform with carpet"],
+      tagline: "A Standard 6 × 5 m stand on the visitor route",
+      points: ["On the north and south aisles, passed by every visitor", "30 m², 3.5 m high: one car and a small desk", "Standard white shell with a name board, 15 cm platform and carpet"],
     },
     spots: "Spots",
     price: "Price on request",
-    cars: "Two cars on the platform",
+    cars: { premium: "Two cars on the platform", golden: "Two cars on the platform", regular: "One car on the platform" },
   },
   booths: {
     title: "Pavilions",
     hero: {
       kicker: "Exhibit at the expo",
       title: "Your pavilion on every visitor's route",
-      body: "Only twelve pavilions, in three tiers, on one loop from the gate and back. No booths in corners, no dead aisles.",
+      body: "Only thirteen stands in three sizes — 10 × 5, 8 × 5 and 6 × 5 m — on one loop from the gate and back. No stands in corners, no dead aisles.",
     },
     benefits: {
       kicker: "Why exhibit",
       title: "What every dealer gets",
       items: [
         { title: "On the route, not in a corner", body: "Every pavilion faces a main aisle on the visitor loop. The corners hold the services that draw people towards them." },
-        { title: "Two cars, two chargers", body: "Room for two cars on the platform and two charging posts in every pavilion, with two DC fast chargers at the centre pavilion." },
+        { title: "Cars and two chargers", body: "Two cars on Large and Medium stands, one on Standard, and two charging posts on every stand." },
         { title: "Finance a few steps away", body: "The finance court sits in the middle of the expo, so a buyer can go from your car to a bank in the same visit." },
         { title: "Your name everywhere", body: "On your pavilion fascia, in the 3D floor plan and on the expo map on this site." },
         { title: "Seven days and a stage", body: "From 1 to 7 May, with launches and shows on the main stage every day." },
@@ -355,9 +354,8 @@ const en: SiteDictionary = {
     compare: {
       kicker: "Compare",
       title: "The three tiers side by side",
-      rows: { size: "Size", area: "Floor area", wall: "Back wall height", platform: "Platform height", finish: "Finish", cars: "Cars on display", charging: "Charging", spots: "Spots", price: "Price" },
+      rows: { size: "Size", area: "Floor area", wall: "Stand height", platform: "Platform height", finish: "Finish", cars: "Cars on display", charging: "Charging", spots: "Spots", price: "Price" },
       finish: { premium: "Gloss black with LED", golden: "Gold fascia and trims", regular: "Standard white shell" },
-      sizeHub: "8 × 8 m (centre) or 8 × 6.5 m",
     },
     list: {
       kicker: "All pavilions",
@@ -388,7 +386,7 @@ const en: SiteDictionary = {
       title: "Where the decision is made",
       items: [
         { title: "On the main axis", body: "Between the centre pavilion and the stage, on the path every visitor takes." },
-        { title: "Next to twelve dealers", body: "Buyers see the car, then ask about finance in the same visit." },
+        { title: "Next to thirteen dealer stands", body: "Buyers see the car, then ask about finance in the same visit." },
         { title: "An EV audience", body: "Visitors who came specifically for electric and plug-in hybrid cars." },
         { title: "Seven days", body: "A continuous presence from 1 to 7 May 2027." },
       ],
@@ -417,7 +415,7 @@ const en: SiteDictionary = {
         { key: "food", title: "Food & coffee court", body: "Three trucks for coffee, food and desserts, with shaded tables in the north-west corner." },
         { key: "wc", title: "Restrooms & first aid", body: "Two restroom units and a first-aid point in the south-west corner." },
         { key: "stage", title: "Stage and seating", body: "297 seats in front of the main stage, with a centre aisle." },
-        { key: "charge", title: "Charging", body: "24 charging points on show inside the pavilions, so you can see charging for real." },
+        { key: "charge", title: "Charging", body: "26 charging points on show inside the stands, so you can see charging for real." },
       ],
     },
     practical: {
@@ -455,7 +453,7 @@ const en: SiteDictionary = {
     about: "An open-air expo for electric and plug-in hybrid cars at the Sports Village parking yard, Ramallah.",
     explore: "Explore",
     dates: "1 – 7 May 2027",
-    rights: "© 2027 Palestine Auto Expo",
+    rights: "© 2027 Palestine Cars Week",
   },
 };
 

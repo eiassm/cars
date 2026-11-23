@@ -17,12 +17,12 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
-import { ZONES, type Tier } from "@/lib/expo";
+import { type Tier } from "@/lib/expo";
 import { ZONES_V2 } from "@/lib/venue";
 import type { Locale } from "@/lib/i18n";
 import {
   BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, PLANTERS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
-  STREET_LAMPS, VILLAGE, type Place,
+  STAND_HEIGHT, STREET_LAMPS, VILLAGE, type Place,
 } from "@/lib/venue";
 
 export type ViewKey = "perspective" | "top" | "gate" | "seats";
@@ -717,7 +717,7 @@ export class VenueScene2 {
     const ar = this.opts.locale === "ar";
     const title = ar ? "السيارات الكهربائية والهجينة" : "Electric & Plug-in Hybrid";
     g.fillStyle = "#ffffff"; this.fitText(g, title, 800, 110, 1050); g.fillText(title, 620, 250);
-    g.fillStyle = "#22E0C8"; this.fitText(g, "PALESTINE AUTO EXPO 2027 · 1–7 MAY", 700, 46, 1000); g.fillText("PALESTINE AUTO EXPO 2027 · 1–7 MAY", 620, 380);
+    g.fillStyle = "#22E0C8"; this.fitText(g, "PALESTINE CARS WEEK 2027 · 1–7 MAY", 700, 46, 1000); g.fillText("PALESTINE CARS WEEK 2027 · 1–7 MAY", 620, 380);
     return tex(c);
   }
 
@@ -873,21 +873,28 @@ export class VenueScene2 {
     const gold = mat(0xc9a14a, { roughness: 0.28, metalness: 1 });
     const floor = mat(0x23272c, { roughness: 0.7 });
     const carpet = mat(0x15181c, { roughness: 1 });
+    // every stand is 3.5 m to the top of the fascia; tiers differ by finish, not height
+    const top = (b: number) => STAND_HEIGHT - b - 0.575;
     const spec: Record<Tier, { plat: number; wallH: number; wall: THREE.Material; side: THREE.Material; fascia: THREE.Material; strip: THREE.Material }> = {
-      regular: { plat: 0.18, wallH: 3.4, wall: white, side: white, fascia: dark, strip: this.glow(TEAL, 0.7, 2.4) },
-      golden: { plat: 0.22, wallH: 3.6, wall: white, side: gold, fascia: gold, strip: this.glow(0xffc35a, 0.8, 2.4) },
-      premium: { plat: 0.34, wallH: 4.6, wall: gloss, side: gloss, fascia: gloss, strip: this.glow(LIME, 0.9, 2.8) },
+      regular: { plat: 0.15, wallH: top(0.15), wall: white, side: white, fascia: dark, strip: this.glow(TEAL, 0.7, 2.4) },
+      golden: { plat: 0.18, wallH: top(0.18), wall: white, side: gold, fascia: gold, strip: this.glow(0xffc35a, 0.8, 2.4) },
+      premium: { plat: 0.22, wallH: top(0.22), wall: gloss, side: gloss, fascia: gloss, strip: this.glow(LIME, 0.9, 2.8) },
     };
-    ZONES.filter((z) => z.group === "booth").forEach((zone, i) => {
+    // nose-out car bays per stand width: car centres, charging posts in the gaps, and the info desk
+    const bays: Record<Tier, { cars: number[]; posts: number[]; desk: number }> = {
+      premium: { cars: [-0.4, 3.2], posts: [1.4, 4.6], desk: -3.6 }, // 10 m: lounge strip on the left
+      golden: { cars: [-1.9, 1.9], posts: [0, -3.6], desk: 0 }, // 8 m
+      regular: { cars: [0.7], posts: [-0.75, 2.4], desk: -2.2 }, // 6 m
+    };
+    ZONES_V2.filter((z) => z.group === "booth").forEach((zone, i) => {
       const p = PLACES[zone.id];
       if (!p) return;
       const tier = TIERS[zone.id] ?? "regular";
       this.boothTier.set(zone.id, tier);
       const g = this.placed(p);
       this.boothGroups.set(zone.id, g);
-      if (p.kind === "hub") { this.buildHub(g, p, zone.id); return; }
       const { w, d } = p;
-      const S = spec[tier], b = S.plat;
+      const S = spec[tier], b = S.plat, B = bays[tier];
       this.boothTop.set(zone.id, b + S.wallH);
       this.add(g, this.rbox(w, b, d, 0.05), floor, 0, b / 2, 0, zone.id);
       this.add(g, new THREE.BoxGeometry(w - 0.2, 0.01, d - 0.2), carpet, 0, b + 0.005, 0).castShadow = false;
@@ -896,28 +903,32 @@ export class VenueScene2 {
       // back wall, fascia, side return
       this.add(g, this.rbox(w, S.wallH, 0.24, 0.05), S.wall, 0, b + S.wallH / 2, -d / 2 + 0.12, zone.id);
       this.add(g, this.rbox(w + 0.1, 0.75, 0.36, 0.04), S.fascia, 0, b + S.wallH + 0.2, -d / 2 + 0.2, zone.id);
-      this.add(g, this.rbox(0.2, 2.6, d * 0.42, 0.04), S.side, w / 2 - 0.1, b + 1.3, -d / 2 + d * 0.21, zone.id);
+      this.add(g, this.rbox(0.2, 2.4, d * 0.4, 0.04), S.side, w / 2 - 0.1, b + 1.2, -d / 2 + d * 0.2, zone.id);
       if (tier === "premium") {
-        // LED line along the top of the wall and down both edges
+        // LED line along the top of the wall and down both edges, and a lounge on the left strip
         this.add(g, new THREE.BoxGeometry(w - 0.2, 0.06, 0.04), S.strip, 0, b + S.wallH - 0.3, -d / 2 + 0.26);
         for (const sx of [-1, 1]) this.add(g, new THREE.BoxGeometry(0.06, S.wallH - 0.4, 0.04), S.strip, sx * (w / 2 - 0.15), b + S.wallH / 2, -d / 2 + 0.26);
+        const sofa = mat(0x3b3e43, { roughness: 0.9 });
+        this.add(g, this.rbox(1.9, 0.42, 0.8, 0.08), sofa, -3.7, b + 0.21, -1.55, zone.id);
+        this.add(g, this.rbox(1.9, 0.5, 0.18, 0.06), sofa, -3.7, b + 0.55, -1.9, zone.id);
+        this.add(g, new THREE.CylinderGeometry(0.35, 0.35, 0.42, 20), gloss, -3.7, b + 0.21, -0.55, zone.id);
       }
       if (tier === "golden") this.add(g, new THREE.BoxGeometry(w, 0.12, 0.26), gold, 0, b + 0.06, -d / 2 + 0.12);
-      const n = w >= 7.5 ? 2 : 1;
-      // info stand at the front edge
-      const sx0 = n === 2 ? 0 : -2.4;
-      this.add(g, this.rbox(0.6, 1.05, 0.4, 0.05), tier === "premium" ? gloss : white, sx0, b + 0.525, d / 2 - 0.45, zone.id);
-      this.add(g, new THREE.BoxGeometry(0.62, 0.05, 0.42), S.strip, sx0, b + 0.9, d / 2 - 0.45);
-      for (let k = 0; k < n; k++) {
+      // info desk at the front edge
+      const deskW = tier === "premium" ? 1.6 : 0.6;
+      this.add(g, this.rbox(deskW, 1.05, 0.45, 0.05), tier === "premium" ? gloss : white, B.desk, b + 0.525, d / 2 - 0.45, zone.id);
+      this.add(g, new THREE.BoxGeometry(deskW + 0.02, 0.05, 0.47), S.strip, B.desk, b + 0.9, d / 2 - 0.45);
+      B.cars.forEach((cx, k) => {
         const car = new THREE.Group();
         car.userData.zone = zone.id;
-        const cx = n === 2 ? (k ? 2 : -2) : 0.4;
-        car.position.set(cx, b, -0.15);
+        car.position.set(cx, b, 0.12);
         g.add(car);
-        this.carSlots.push({ g: car, color: colors[(i * 2 + k) % colors.length], hero: false });
-        const px = n === 2 ? (k ? 0.45 : -0.45) : -1.6;
-        this.charger(g, px, -d / 2 + 0.55, { x: n === 2 ? cx + (k ? -0.6 : 0.6) : cx - 0.6, z: -1.6 }, zone.id, 1.5, b);
-        if (n === 1) this.charger(g, 2.3, -d / 2 + 0.55, { x: cx + 0.6, z: -1.6 }, zone.id, 1.5, b); // keep two posts per pavilion
+        this.carSlots.push({ g: car, color: colors[(i * 2 + k) % colors.length], hero: zone.id === "p1" });
+      });
+      // two charging posts per stand, each cabled to the nearest car's rear port
+      for (const px of B.posts) {
+        const cx = B.cars.reduce((m, c) => (Math.abs(c - px) < Math.abs(m - px) ? c : m), B.cars[0]);
+        this.charger(g, px, -d / 2 + 0.5, { x: cx + Math.sign(px - cx || 1) * 0.6, z: -1.6 }, zone.id, 1.4, b);
       }
     });
   }
@@ -1044,24 +1055,6 @@ export class VenueScene2 {
     }
   }
 
-  private buildHub(g: THREE.Group, p: Place, id: string) {
-    const r = Math.min(p.w, p.d) / 2;
-    this.add(g, new THREE.CylinderGeometry(r, r, 0.2, 64), mat(0x1c2126, { roughness: 0.6 }), 0, 0.1, 0, id);
-    this.add(g, new THREE.TorusGeometry(r, 0.05, 8, 96).rotateX(Math.PI / 2), this.glow(LIME, 0.9, 2.8), 0, 0.2, 0);
-    const turntable = this.add(g, new THREE.CylinderGeometry(r - 0.8, r - 0.8, 0.12, 64), mat(0xd9dee2, { metalness: 0.7, roughness: 0.25 }), 0, 0.26, 0, id);
-    turntable.castShadow = false;
-    const car = new THREE.Group();
-    car.position.set(0, 0.32, 0);
-    car.userData.zone = id;
-    g.add(car);
-    this.spin.push(car);
-    this.carSlots.push({ g: car, color: 0xe9eef2, hero: true });
-    // halo ring overhead on two totems
-    const metal = mat(0xc9d2da, { metalness: 0.9, roughness: 0.22 });
-    for (const s of [-1, 1]) this.add(g, this.rbox(0.35, 5.4, 0.35, 0.06), metal, s * (r - 0.7), 2.7, -r + 0.6, id);
-    for (const s of [-1, 1]) this.charger(g, s * (r - 0.5), r - 0.6, { x: s * 1.2, z: 0.6 }, id, 2.1);
-  }
-
   private chargerGlow: THREE.MeshStandardMaterial | null = null;
 
   private charger(parent: THREE.Object3D, x: number, z: number, port: { x: number; z: number }, zone: string, h = 1.5, base = 0.18) {
@@ -1081,7 +1074,7 @@ export class VenueScene2 {
 
   private buildSigns() {
     const l = this.opts.locale;
-    ZONES.filter((z) => z.group === "booth" && z.exhibitor).forEach((zone) => {
+    ZONES_V2.filter((z) => z.group === "booth" && z.exhibitor).forEach((zone) => {
       const g = this.boothGroups.get(zone.id);
       const p = PLACES[zone.id];
       if (!g || !p) return;
@@ -1090,19 +1083,6 @@ export class VenueScene2 {
       const t = this.signTexture(ex.name[l], ex.name[l === "ar" ? "en" : "ar"], 1024, 256, tier === "golden" ? "#17120a" : "#0d1217", TIER_COLOR[tier]);
       const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.35, roughness: 0.5 });
       this.glowMats.push({ m, day: 0.35, night: 1 });
-      if (p.kind === "hub") {
-        const r = Math.min(p.w, p.d) / 2;
-        const sw = 2 * r - 1.6, sh = sw / 4;
-        const zb = -r + 0.6;
-        this.add(g, this.rbox(sw + 0.2, sh + 0.2, 0.42, 0.05), mat(0x0d1217), 0, 6.1, zb, zone.id);
-        const s = this.add(g, new THREE.PlaneGeometry(sw, sh), m, 0, 6.1, zb + 0.22, zone.id);
-        s.castShadow = false;
-        const back = s.clone();
-        back.rotation.y = Math.PI;
-        back.position.z = zb - 0.22;
-        g.add(back);
-        return;
-      }
       const top = this.boothTop.get(zone.id) ?? 3.58;
       const s = this.add(g, new THREE.PlaneGeometry(p.w - 0.3, 0.62), m, 0, top + 0.2, -p.d / 2 + 0.39, zone.id);
       s.castShadow = false;
@@ -1123,7 +1103,7 @@ export class VenueScene2 {
       this.add(g, new THREE.PlaneGeometry(p.w, 0.47), m, 0, 2.7, p.d / 2 + 0.185, zone.id).castShadow = false;
     }
     if (this.gateGroup) {
-      const [main, sub] = l === "ar" ? ["معرض فلسطين للسيارات 2027", "Electric & Plug-in Hybrid · 1–7 May 2027"] : ["Palestine Auto Expo 2027", "السيارات الكهربائية والهجينة · 1–7 أيار"];
+      const [main, sub] = l === "ar" ? ["أسبوع فلسطين للسيارات 2027", "Electric & Plug-in Hybrid · 1–7 May 2027"] : ["Palestine Cars Week 2027", "السيارات الكهربائية والهجينة · 1–7 أيار"];
       const t = this.signTexture(main, sub, 2048, 160);
       const m = new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.4 });
       this.glowMats.push({ m, day: 0.4, night: 1 });
@@ -1261,7 +1241,7 @@ export class VenueScene2 {
       el.append(tag, name);
       el.addEventListener("click", (e) => { e.stopPropagation(); this.opts.onSelect(z.id); });
       const obj = new CSS2DObject(el);
-      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "hub" ? 7 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : p.kind === "bank" ? 3.9 : p.kind === "food" ? 4.6 : p.kind === "wc" ? 4 : (this.boothTop.get(z.id) ?? 3.6) + 1.6;
+      const h = p.kind === "stage" ? 10 : p.kind === "gate" ? 8 : p.kind === "seats" ? 3 : p.kind === "tent" ? 5.6 : p.kind === "bank" ? 3.9 : p.kind === "food" ? 4.6 : p.kind === "wc" ? 4 : (this.boothTop.get(z.id) ?? 3.6) + 1.6;
       obj.position.set(p.x, h, p.z);
       this.pinGroup.add(obj);
       this.pins.set(z.id, el);

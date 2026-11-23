@@ -35,12 +35,12 @@ export function ExpoLogo({ lang, className }: { lang: "ar" | "en"; className?: s
       <span className="expo-logo__text">
         {lang === "ar" ? (
           <>
-            <span className="expo-logo__main">معرض فلسطين للسيارات <b dir="ltr">2027</b></span>
+            <span className="expo-logo__main">أسبوع فلسطين للسيارات <b dir="ltr">2027</b></span>
             <span className="expo-logo__sub">السيارات الكهربائية والهجينة</span>
           </>
         ) : (
           <>
-            <span className="expo-logo__main">PALESTINE AUTO EXPO <b>2027</b></span>
+            <span className="expo-logo__main">PALESTINE CARS WEEK <b>2027</b></span>
             <span className="expo-logo__sub">Electric &amp; Plug-in Hybrid</span>
           </>
         )}
