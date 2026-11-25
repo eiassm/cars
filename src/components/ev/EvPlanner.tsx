@@ -90,7 +90,7 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
 
   const stats = [
     { value: String(CHARGERS), label: e.stats.chargers, icon: <PlugZap size={16} aria-hidden="true" /> },
-    { value: "12", label: e.stats.booths },
+    { value: String(ZONES.filter((z) => z.group === "booth").length), label: e.stats.booths },
     { value: String(SEATS_V2.length), label: e.stats.seats },
     { value: `≈ ${YARD_AREA.toLocaleString("en-US")} m²`, label: e.stats.area },
   ];
@@ -201,10 +201,10 @@ export function EvPlanner({ lang, t }: { lang: Locale; t: Dictionary }) {
               <span dir="ltr">{z.w} × {z.d} m</span>
               <span dir="ltr">{area(z.w, z.d)}</span>
               {z.tier && <span style={{ color: TIER_COLOR[z.tier] }}>{TIER_LABEL[z.tier][lang]}</span>}
-              {z.group === "booth" && <span className="ev-sel__charge"><Zap size={12} aria-hidden="true" />{z.id === "p1" ? "DC × 2" : "AC × 2"}</span>}
+              {z.group === "booth" && <span className="ev-sel__charge"><Zap size={12} aria-hidden="true" />AC × 2</span>}
             </div>
             <p>{z.note[lang]}</p>
-            {z.group === "booth" && <p className="ev-sel__ev"><PlugZap size={14} aria-hidden="true" />{z.id === "p1" ? e.hubChargers : e.boothChargers}</p>}
+            {z.group === "booth" && <p className="ev-sel__ev"><PlugZap size={14} aria-hidden="true" />{e.boothChargers}</p>}
             <button type="button" className="ev-fly" onClick={() => sceneRef.current?.select(z.id)}><LocateFixed size={15} aria-hidden="true" />{e.flyTo}</button>
           </div>
         )}

@@ -30,12 +30,12 @@ export type Facing = "in" | "c";
  * A placed rectangle in the layout frame: centre, size along its own x (w) and z (d), and its angle in degrees
  * measured from layout +x towards +z (three.js yaw = −rot). A booth's back wall is on its own −z side.
  */
-export type Place = { x: number; z: number; w: number; d: number; rot: number; kind: "stage" | "seats" | "foh" | "tent" | "gate" | "booth" | "hub" | "bank" | "food" | "wc" };
+export type Place = { x: number; z: number; w: number; d: number; rot: number; kind: "stage" | "seats" | "foh" | "tent" | "gate" | "booth" | "bank" | "food" | "wc" };
 
 /**
  * Layout v3 — one visitor loop, nothing sellable in a corner.
- * Gate (east) → hub → premium by the gate → north row → food court (NW corner anchor) → stage and seats →
- * cross aisle → south row → back to the gate. The central island sits on the hub-to-stage axis, with the
+ * Gate (east) → centre stand → premium by the gate → north row → food court (NW corner anchor) → stage and seats →
+ * cross aisle → south row → back to the gate. The central island sits on the centre-to-stage axis, with the
  * finance court (banks) in its middle. Corners hold services that pull people through: food (NW),
  * restrooms (SW), VIP and backstage beside the stage.
  */
@@ -46,24 +46,26 @@ export const PLACES: Record<string, Place> = {
   vip: { x: 5, z: 16, w: 8, d: 7, rot: 0, kind: "tent" },
   media: { x: 5, z: 44, w: 8, d: 7, rot: 0, kind: "tent" },
   gate: { x: 57.4, z: 45.5, w: 4, d: 19, rot: 17, kind: "gate" },
-  // hub on the main axis, first thing past the gate
-  p1: { x: 46, z: 36.5, w: 8, d: 8, rot: -90, kind: "hub" }, // sign at its west side, read from the gate
-  // premium spot right beside the gate, back to edge 5→6
-  p2: { x: 56.14, z: 30.99, w: 8, d: 6.5, rot: 68.96, kind: "booth" },
+  // Stand sizes follow the sales sheet: Large 10 × 5 m, Medium 8 × 5 m, Standard 6 × 5 m, all 3.5 m high.
+  // Large on the main axis, facing the gate (back wall to the west)
+  p1: { x: 46, z: 36.5, w: 10, d: 5, rot: -90, kind: "booth" },
+  // Large right beside the gate, back to edge 5→6
+  p2: { x: 56.84, z: 30.72, w: 10, d: 5, rot: 68.96, kind: "booth" },
   // north row, backs to the curved edge, facing the north aisle
-  p3: { x: 46.07, z: 21.81, w: 8, d: 6.5, rot: 44.6, kind: "booth" },
-  p4: { x: 37.73, z: 15.3, w: 8, d: 6.5, rot: 32.25, kind: "booth" },
-  p5: { x: 29.29, z: 10.66, w: 8, d: 6.5, rot: 23.47, kind: "booth" },
-  p6: { x: 21.63, z: 7.33, w: 8, d: 6.5, rot: 23.47, kind: "booth" },
+  p3: { x: 46.6, z: 21.28, w: 10, d: 5, rot: 44.62, kind: "booth" },
+  p4: { x: 37.97, z: 14.56, w: 8, d: 5, rot: 32.25, kind: "booth" },
+  p5: { x: 27.75, z: 9.18, w: 8, d: 5, rot: 23.47, kind: "booth" },
+  p6: { x: 21.05, z: 6.27, w: 6, d: 5, rot: 23.47, kind: "booth" },
   // central island: P07 faces the north aisle, P08 the south aisle
-  p7: { x: 33.5, z: 26.25, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p8: { x: 33.5, z: 44.75, w: 8, d: 6.5, rot: 0, kind: "booth" },
+  p7: { x: 33.5, z: 27, w: 8, d: 5, rot: 180, kind: "booth" },
+  p8: { x: 33.5, z: 44, w: 8, d: 5, rot: 0, kind: "booth" },
   // south row, backs to the bottom edge, facing the south aisle (the way back to the gate)
-  p9: { x: 16.5, z: 56.75, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p10: { x: 26, z: 57, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p11: { x: 35.5, z: 57, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  p12: { x: 44.5, z: 56.75, w: 8, d: 6.5, rot: 180, kind: "booth" },
-  // finance court: two rows of bank kiosks facing each other across the hub-to-stage axis
+  p9: { x: 13.2, z: 57.3, w: 6, d: 5, rot: 180, kind: "booth" },
+  p10: { x: 19.35, z: 57.3, w: 6, d: 5, rot: 180, kind: "booth" },
+  p11: { x: 26.5, z: 57.3, w: 8, d: 5, rot: 180, kind: "booth" },
+  p12: { x: 34.65, z: 57.3, w: 8, d: 5, rot: 180, kind: "booth" },
+  p13: { x: 43.8, z: 57.3, w: 10, d: 5, rot: 180, kind: "booth" },
+  // finance court: two rows of bank kiosks facing each other across the centre-to-stage axis
   b1: { x: 30.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
   b2: { x: 33.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
   b3: { x: 36.5, z: 31, w: 3, d: 3, rot: 0, kind: "bank" },
@@ -75,17 +77,22 @@ export const PLACES: Record<string, Place> = {
   wc: { x: 5, z: 54.5, w: 7, d: 9, rot: 0, kind: "wc" },
 };
 
-/** Tiers follow foot traffic: premium on the axis and at the gate, golden on the busiest aisle fronts. */
+/** Tiers are stand sizes: Premium = Large 10 × 5 m, Golden = Medium 8 × 5 m, Regular = Standard 6 × 5 m. */
 export const TIERS: Record<string, Tier> = {
-  p1: "premium", p2: "premium",
-  p3: "golden", p7: "golden", p8: "golden", p12: "golden",
-  p4: "regular", p5: "regular", p6: "regular", p9: "regular", p10: "regular", p11: "regular",
+  p1: "premium", p2: "premium", p3: "premium", p13: "premium",
+  p4: "golden", p5: "golden", p7: "golden", p8: "golden", p11: "golden", p12: "golden",
+  p6: "regular", p9: "regular", p10: "regular",
 };
 
+/** Cars per stand: two on Large and Medium, one on Standard. */
+export const CARS_PER_TIER: Record<Tier, number> = { premium: 2, golden: 2, regular: 1 };
+
+export const STAND_HEIGHT = 3.5;
+
 export const TIER_LABEL: Record<Tier, { ar: string; en: string }> = {
-  premium: { ar: "بريميوم", en: "Premium" },
-  golden: { ar: "ذهبي", en: "Golden" },
-  regular: { ar: "عادي", en: "Regular" },
+  premium: { ar: "بريميوم · كبير", en: "Premium · Large" },
+  golden: { ar: "ذهبي · متوسط", en: "Golden · Medium" },
+  regular: { ar: "عادي · قياسي", en: "Regular · Standard" },
 };
 
 export const TIER_COLOR: Record<Tier, string> = { premium: "#B6F23A", golden: "#E2B84A", regular: "#22E0C8" };
@@ -109,7 +116,7 @@ export const SEATS_V2: [number, number, number][] = (() => {
 export const ENERGY_ROUTES: [number, number][][] = [
   // gate → north aisle → behind the seats → south aisle → back to the gate
   [[55.5, 46.5], [51.5, 43.5], [52, 37.5], [50.5, 30.5], [46, 27.5], [39, 21.5], [30, 19.2], [26, 20.5], [27, 27], [27, 46], [29, 50.7], [50, 50.7], [55, 48]],
-  // the axis: hub → finance court → seats
+  // the axis: centre stand → finance court → seats
   [[41.3, 35.5], [26.2, 35.5]],
   // spur to the food court
   [[26, 19.4], [20, 14.5], [15, 12]],
@@ -118,7 +125,7 @@ export const ENERGY_ROUTES: [number, number][][] = [
 ];
 
 /** Planters that fill the leftover corners. */
-export const PLANTERS: [number, number][] = [[54.2, 25.6], [51.6, 55.8], [21.5, 51], [40.5, 47.5], [26.5, 23.5], [10.5, 61]];
+export const PLANTERS: [number, number][] = [[53.2, 25], [51.6, 55.8], [21.5, 51], [40.5, 47.5], [26.5, 23.5], [10.5, 61]];
 
 /** Sports Village neighbours in the layout frame (x < 0 is beyond the straight edge). */
 export const VILLAGE = {
@@ -130,15 +137,16 @@ export const VILLAGE = {
 };
 
 export const FLOODLIGHTS: [number, number][] = [[-3.5, 4], [-3.5, 24], [-3.5, 44], [-36, 0], [-36, 40], [-36, 80], [-124, 0], [-124, 60]];
-export const STREET_LAMPS: [number, number][] = [[20, 4.6], [44, 14.2], [58, 27.5], [50, 59.5], [24, 63], [2, 61]];
+export const STREET_LAMPS: [number, number][] = [[17, 3.2], [44, 14.2], [54.5, 24.3], [50, 59.5], [24, 63], [2, 61]];
 
-export const CHARGERS_V2 = 12 * 2;
+/** Two charging posts per stand. */
+export const CHARGERS_V2 = Object.keys(TIERS).length * 2;
 
 /** Zones as the menu lists them, with v2 sizes. */
 const TIER_NOTE: Record<Tier, { ar: string; en: string }> = {
-  premium: { ar: "جناح بريميوم: أفضل موقع، جدار خلفي أسود لامع بارتفاع مضاعف، منصة مرتفعة وإضاءة LED.", en: "Premium pavilion: a top spot, double-height gloss-black back wall, raised platform and LED edge lighting." },
-  golden: { ar: "جناح ذهبي: واجهة وحواف بلمسة ذهبية وجدار خلفي يحمل الاسم.", en: "Golden pavilion: gold-finish fascia and trims with a branded back wall." },
-  regular: { ar: "جناح عادي: هيكل أبيض قياسي مع لوحة اسم وجدار خلفي.", en: "Regular pavilion: standard white shell with a name board and back wall." },
+  premium: { ar: "جناح كبير 10 × 5 م (50 م²) بارتفاع 3.5 م: سيارتان، ركن جلوس ومكتب استقبال، في أفضل المواقع.", en: "Large stand, 10 × 5 m (50 m²), 3.5 m high: two cars, a lounge and a reception desk, in the best spots." },
+  golden: { ar: "جناح متوسط 8 × 5 م (40 م²) بارتفاع 3.5 م: سيارتان ومنصة معلومات، على ممرات مزدحمة.", en: "Medium stand, 8 × 5 m (40 m²), 3.5 m high: two cars and an info podium, on busy aisles." },
+  regular: { ar: "جناح قياسي 6 × 5 م (30 م²) بارتفاع 3.5 م: سيارة واحدة ومكتب صغير.", en: "Standard stand, 6 × 5 m (30 m²), 3.5 m high: one car and a small desk." },
 };
 
 const SERVICE_ZONES: Zone[] = [
@@ -167,19 +175,26 @@ const BANK_ZONES: Zone[] = Array.from({ length: 6 }, (_, i) => {
   };
 });
 
+const BOOTH_ZONES: Zone[] = Object.keys(TIERS).map((id) => {
+  const n = id.slice(1).padStart(2, "0");
+  const p = PLACES[id];
+  const tier = TIERS[id];
+  const label = TIER_LABEL[tier];
+  return {
+    id, group: "booth", tag: `P${n}`, x: 0, y: 0, w: p.w, d: p.d, tier, swatch: TIER_COLOR[tier],
+    name: { ar: `جناح ${n}`, en: `Pavilion ${n}` },
+    sub: { ar: `${label.ar} · متاح للحجز`, en: `${label.en} · Available to book` },
+    note: TIER_NOTE[tier],
+    exhibitor: { id: `pavilion-${n}`, name: { ar: `جناح ${n}`, en: `Pavilion ${n}` }, city: { ar: "", en: "" }, brands: "", image: "" },
+  } as Zone;
+});
+
 export const ZONES_V2: Zone[] = [
-  ...ZONES.map((z) => {
+  ...ZONES.filter((z) => z.group !== "booth").map((z) => {
     const p = PLACES[z.id];
-    const tier = TIERS[z.id];
-    const sized = p ? { ...z, w: p.w, d: p.d } : z;
-    if (!tier) return sized;
-    const label = TIER_LABEL[tier];
-    return {
-      ...sized, tier, swatch: TIER_COLOR[tier],
-      sub: { ar: `${label.ar} · متاح للحجز`, en: `${label.en} · Available to book` },
-      note: z.id === "p1" ? { ar: `${TIER_NOTE.premium.ar} في المركز مقابل المدخل، بمنصة دوّارة.`, en: `${TIER_NOTE.premium.en} Centre of the yard facing the entrance, with a turntable.` } : TIER_NOTE[tier],
-    };
+    return p ? { ...z, w: p.w, d: p.d } : z;
   }),
+  ...BOOTH_ZONES,
   ...BANK_ZONES,
   ...SERVICE_ZONES,
 ];

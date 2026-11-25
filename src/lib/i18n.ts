@@ -6,8 +6,8 @@ export const hasLocale = (value: string): value is Locale => (LOCALES as readonl
 
 const ar = {
   dir: "rtl" as "rtl" | "ltr",
-  brand: "معرض فلسطين للسيارات 2027",
-  brandShort: "معرض فلسطين للسيارات",
+  brand: "أسبوع فلسطين للسيارات 2027",
+  brandShort: "أسبوع فلسطين للسيارات",
   navLabel: "أقسام الموقع",
   switchLang: "English",
   switchLangShort: "EN",
@@ -18,8 +18,8 @@ const ar = {
   nav: { exhibitors: "العارضون", plan: "المخطط", program: "البرنامج", visit: "زيارتك", sponsors: "الرعاة" },
   hero: {
     eyebrow: "1 – 7 أيار 2027 · القرية الرياضية · رام الله",
-    title: "سبعة أيام. اثنا عشر وكيلاً. ساحة واحدة.",
-    sub: "معرض مفتوح للسيارات الكهربائية والهجينة القابلة للشحن، من 1 إلى 7 أيار 2027 في موقف القرية الرياضية، رام الله: 12 جناحاً للوكلاء، ساحة تمويل، ومسرح بعروض يومية.",
+    title: "سبعة أيام. ثلاثة عشر جناحاً. ساحة واحدة.",
+    sub: "معرض مفتوح للسيارات الكهربائية والهجينة القابلة للشحن، من 1 إلى 7 أيار 2027 في موقف القرية الرياضية، رام الله: 13 جناحاً للوكلاء، ساحة تمويل، ومسرح بعروض يومية.",
   },
   countdown: {
     before: "حتى الافتتاح",
@@ -30,14 +30,14 @@ const ar = {
   factsLabel: "المعرض بالأرقام",
   facts: [
     { icon: "calendar", value: "7", label: "أيام عرض", sub: "1 – 7 أيار 2027" },
-    { icon: "store", value: "12", label: "وكيلاً مشاركاً", sub: "جناح لكل وكيل بمنصة لسيارتين" },
+    { icon: "store", value: "13", label: "جناحاً للوكلاء", sub: "ثلاثة قياسات: 10 × 5 و8 × 5 و6 × 5 م" },
     { icon: "mic", value: "16×8 m", label: "المسرح الرئيسي", sub: "عروض يومية وحوالي 400 مقعد" },
     { icon: "pin", value: "≈ 3,000 m²", label: "ساحة مفتوحة", sub: "مدخل واحد من الجنوب" },
   ],
   exhibitors: {
     kicker: "العارضون",
-    title: "اثنا عشر وكيلاً في مكان واحد",
-    body: "لكل وكيل جناح بمساحة 45–52 م² بجدار خلفي يحمل اسمه ومنصة لسيارتين. الجناح المركزي المميز يقابل المدخل مباشرة.",
+    title: "ثلاثة عشر جناحاً في مكان واحد",
+    body: "أجنحة بثلاثة قياسات — كبير 10 × 5 م، متوسط 8 × 5 م وقياسي 6 × 5 م — بارتفاع 3.5 م وجدار خلفي يحمل اسم الوكيل. الجناح المركزي يقابل المدخل مباشرة.",
     booth: "جناح",
   },
   plan: {
@@ -46,7 +46,7 @@ const ar = {
     body: "تبلغ مساحة الساحة حوالي 62 × 61 م. تدخل من الجنوب عبر بوابة التسجيل فيستقبلك الجناح المركزي، ثم الأجنحة على الجانبين، وصولاً إلى المسرح ومنطقة الجلوس في الشمال.",
     bullets: [
       { tag: "ST", label: "المسرح الرئيسي وجلوس الجمهور في الشمال", color: "#A8883A" },
-      { tag: "P01–12", label: "12 جناحاً على الأطراف وفي الوسط", color: "#e3e3e3" },
+      { tag: "P01–13", label: "13 جناحاً على الأطراف وفي الوسط", color: "#e3e3e3" },
       { tag: "VIP · BS", label: "صالة كبار الضيوف والكواليس بجانب المسرح", color: "#C9C2B0" },
       { tag: "IN", label: "بوابة الدخول والتسجيل من الجنوب", color: "#C9C2B0" },
     ],
@@ -108,8 +108,7 @@ const ar = {
     stats: { chargers: "نقطة شحن مقترحة", booths: "جناحاً للوكلاء", seats: "مقعداً أمام المسرح", area: "مساحة الساحة" },
     menu: "القائمة",
     hideMenu: "إخفاء القائمة",
-    boothChargers: "نقطتا شحن بجانب السيارتين المعروضتين",
-    hubChargers: "محطتا شحن سريع (DC) بجانب المنصة الدوّارة",
+    boothChargers: "نقطتا شحن في كل جناح بجانب السيارات المعروضة",
     flyTo: "انتقل إليها",
     legendChargers: "نقاط الشحن",
     legendPath: "مسار الزائر: حلقة باتجاه واحد",
@@ -124,13 +123,13 @@ const ar = {
       of: "من",
       steps: [
         { id: "gate", title: "الدخول والتسجيل", text: "المدخل الوحيد من الشارع الدائري. التسجيل والتذاكر عند البوابة، ومن هنا يبدأ مسار الزائر باتجاه واحد." },
-        { id: "p1", title: "الجناح المركزي", text: "أول ما يراه الزائر: منصة دوّارة وشاحنان سريعان على المحور الرئيسي بين المدخل والمسرح. جناح بريميوم." },
+        { id: "p1", title: "الجناح المركزي", text: "أول ما يراه الزائر: جناح كبير 10 × 5 م على المحور الرئيسي بين المدخل والمسرح، بواجهته نحو البوابة. بريميوم." },
         { id: "p2", title: "بريميوم بجانب المدخل", text: "على يمين الداخل مباشرة، يمرّ به كل زائر عند الدخول والخروج." },
-        { id: "p4", title: "الممر الشمالي", text: "أربعة أجنحة على طول الجدار المنحني (P03–P06)، تواجه الممر المؤدي إلى ساحة الطعام." },
+        { id: "p4", title: "الممر الشمالي", text: "أربعة أجنحة على طول الجدار المنحني (P03–P06)، من الكبير إلى القياسي، تواجه الممر المؤدي إلى ساحة الطعام." },
         { id: "food", title: "ساحة الطعام والقهوة", text: "في الزاوية الشمالية الغربية حتى تسحب الزوار عبر الممر الشمالي بدل أن تبقى الزاوية ميتة." },
         { id: "stage", title: "المسرح الرئيسي", text: "إطلاقات السيارات والعروض اليومية أمام 297 مقعداً، مع صالة كبار الضيوف والكواليس على جانبيه." },
         { id: "b2", title: "ساحة التمويل", text: "ستة أكشاك بنكية متقابلة في قلب المعرض، على المحور بين الجناح المركزي والمسرح — يمر بها الجميع." },
-        { id: "p12", title: "الممر الجنوبي والخروج", text: "أربعة أجنحة على طريق العودة إلى البوابة، ودورات المياه والإسعاف في الزاوية الجنوبية الغربية." },
+        { id: "p13", title: "الممر الجنوبي والخروج", text: "خمسة أجنحة (P09–P13) على طريق العودة إلى البوابة، ودورات المياه والإسعاف في الزاوية الجنوبية الغربية." },
       ],
     },
     loading: "جارٍ شحن النموذج…",
@@ -139,7 +138,7 @@ const ar = {
   },
   venue: {
     title: "مخطط المعرض ثلاثي الأبعاد",
-    eyebrow: "Palestine Auto Expo 2027 · Venue in 3D",
+    eyebrow: "Palestine Cars Week 2027 · Venue in 3D",
     place: "موقف القرية الرياضية — رام الله",
     dates: "1 – 7 أيار 2027",
     back: "الموقع الإلكتروني",
@@ -165,8 +164,8 @@ export type Dictionary = typeof ar;
 
 const en: Dictionary = {
   dir: "ltr",
-  brand: "Palestine Auto Expo 2027",
-  brandShort: "Palestine Auto Expo",
+  brand: "Palestine Cars Week 2027",
+  brandShort: "Palestine Cars Week",
   navLabel: "Site sections",
   switchLang: "العربية",
   switchLangShort: "عربي",
@@ -177,8 +176,8 @@ const en: Dictionary = {
   nav: { exhibitors: "Exhibitors", plan: "Floor plan", program: "Programme", visit: "Visit", sponsors: "Sponsors" },
   hero: {
     eyebrow: "1 – 7 May 2027 · Sports Village · Ramallah",
-    title: "Seven days. Twelve dealers. One venue.",
-    sub: "An open-air expo for electric and plug-in hybrid cars, 1–7 May 2027 at the Sports Village parking yard, Ramallah: 12 dealer pavilions, a finance court and a stage with shows every day.",
+    title: "Seven days. Thirteen stands. One venue.",
+    sub: "An open-air expo for electric and plug-in hybrid cars, 1–7 May 2027 at the Sports Village parking yard, Ramallah: 13 dealer stands, a finance court and a stage with shows every day.",
   },
   countdown: {
     before: "Until opening",
@@ -189,14 +188,14 @@ const en: Dictionary = {
   factsLabel: "The expo in numbers",
   facts: [
     { icon: "calendar", value: "7", label: "days", sub: "1 – 7 May 2027" },
-    { icon: "store", value: "12", label: "exhibiting dealers", sub: "One pavilion each, two cars on display" },
+    { icon: "store", value: "13", label: "dealer stands", sub: "Three sizes: 10 × 5, 8 × 5 and 6 × 5 m" },
     { icon: "mic", value: "16×8 m", label: "main stage", sub: "Daily shows, about 400 seats" },
     { icon: "pin", value: "≈ 3,000 m²", label: "open-air yard", sub: "Single entrance on the south side" },
   ],
   exhibitors: {
     kicker: "Exhibitors",
-    title: "Twelve dealers in one place",
-    body: "Each dealer gets a 45–52 m² pavilion with a branded back wall and a platform for two cars. The featured centre pavilion faces the entrance.",
+    title: "Thirteen stands in one place",
+    body: "Stands come in three sizes — Large 10 × 5 m, Medium 8 × 5 m and Standard 6 × 5 m — all 3.5 m high with a branded back wall. The centre stand faces the entrance.",
     booth: "Booth",
   },
   plan: {
@@ -205,7 +204,7 @@ const en: Dictionary = {
     body: "The yard is roughly 62 × 61 m. You enter from the south through registration, meet the centre pavilion, pass the pavilions on both sides and reach the stage and seating to the north.",
     bullets: [
       { tag: "ST", label: "Main stage and audience seating to the north", color: "#A8883A" },
-      { tag: "P01–12", label: "12 pavilions along the edges and centre", color: "#e3e3e3" },
+      { tag: "P01–13", label: "13 stands along the edges and centre", color: "#e3e3e3" },
       { tag: "VIP · BS", label: "VIP lounge and backstage beside the stage", color: "#C9C2B0" },
       { tag: "IN", label: "Entrance gate and registration on the south", color: "#C9C2B0" },
     ],
@@ -267,8 +266,7 @@ const en: Dictionary = {
     stats: { chargers: "proposed charging points", booths: "dealer pavilions", seats: "seats at the stage", area: "yard area" },
     menu: "Menu",
     hideMenu: "Hide menu",
-    boothChargers: "Two charging points beside the two cars on display",
-    hubChargers: "Two fast DC chargers beside the turntable",
+    boothChargers: "Two charging points on every stand, beside the cars on display",
     flyTo: "Fly to it",
     legendChargers: "Charging points",
     legendPath: "Visitor route: one-way loop",
@@ -283,13 +281,13 @@ const en: Dictionary = {
       of: "of",
       steps: [
         { id: "gate", title: "Arrive and register", text: "The only entrance, from the loop road. Registration and tickets at the gate; from here the route runs one way around the yard." },
-        { id: "p1", title: "Centre pavilion", text: "The first thing every visitor sees: a turntable and two fast chargers on the main axis between the gate and the stage. Premium." },
+        { id: "p1", title: "Centre pavilion", text: "The first thing every visitor sees: a Large 10 × 5 m stand on the main axis between the gate and the stage, facing the gate. Premium." },
         { id: "p2", title: "Premium by the gate", text: "Right beside the entrance, passed by everyone coming in and going out." },
-        { id: "p4", title: "North aisle", text: "Four pavilions along the curved wall (P03–P06), facing the aisle that leads to the food court." },
+        { id: "p4", title: "North aisle", text: "Four stands along the curved wall (P03–P06), from Large to Standard, facing the aisle that leads to the food court." },
         { id: "food", title: "Food & coffee court", text: "Placed in the north-west corner so it pulls visitors along the north aisle instead of leaving a dead corner." },
         { id: "stage", title: "Main stage", text: "Daily launches and shows in front of 297 seats, with the VIP lounge and backstage on either side." },
         { id: "b2", title: "Finance court", text: "Six bank kiosks facing each other at the heart of the expo, on the axis between the centre pavilion and the stage. Everyone passes through." },
-        { id: "p12", title: "South aisle and exit", text: "Four pavilions on the way back to the gate; restrooms and first aid in the south-west corner." },
+        { id: "p13", title: "South aisle and exit", text: "Five stands (P09–P13) on the way back to the gate; restrooms and first aid in the south-west corner." },
       ],
     },
     loading: "Charging the model…",
@@ -298,7 +296,7 @@ const en: Dictionary = {
   },
   venue: {
     title: "Expo floor plan in 3D",
-    eyebrow: "معرض فلسطين للسيارات 2027 · المخطط ثلاثي الأبعاد",
+    eyebrow: "أسبوع فلسطين للسيارات 2027 · المخطط ثلاثي الأبعاد",
     place: "Sports Village parking yard — Ramallah",
     dates: "1 – 7 May 2027",
     back: "Website",

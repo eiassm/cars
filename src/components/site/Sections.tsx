@@ -70,7 +70,7 @@ export function TierCards({ lang, s, link }: { lang: Locale; s: SiteDictionary; 
             <p className="tier__tagline">{T.tagline}</p>
             <ul>
               {T.points.map((p) => <li key={p}><Check size={16} aria-hidden="true" />{p}</li>)}
-              <li><Car size={16} aria-hidden="true" />{s.tiers.cars}</li>
+              <li><Car size={16} aria-hidden="true" />{s.tiers.cars[tier]}</li>
               <li><BatteryCharging size={16} aria-hidden="true" />{TIER_SPEC[tier].chargers[lang]}</li>
             </ul>
             <div className="tier__foot">
