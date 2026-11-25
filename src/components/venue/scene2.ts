@@ -4,9 +4,6 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -21,7 +18,7 @@ import { type Tier } from "@/lib/expo";
 import { ZONES_V2 } from "@/lib/venue";
 import type { Locale } from "@/lib/i18n";
 import {
-  BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, PLANTERS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, SEATS_V2, SITE_IMAGE,
+  BANK_COLOR, ENERGY_ROUTES, FLOODLIGHTS, PLANTERS, TIERS, TIER_COLOR, LAYOUT_ORIGIN, LAYOUT_YAW, LOT_LOCAL, LOT_TEXTURE, OPEN_EDGES, PLACES, ROAD, ROAD_TRACED, SEATS_V2,
   STAND_HEIGHT, STREET_LAMPS, VILLAGE, type Place,
 } from "@/lib/venue";
 
@@ -104,11 +101,10 @@ export class VenueScene2 {
   private flow: THREE.MeshStandardMaterial[] = [];
   private nightOnly: THREE.Light[] = [];
   private glowMats: { m: THREE.MeshStandardMaterial; day: number; night: number }[] = [];
-  private carSlots: { g: THREE.Group; color: number; hero: boolean }[] = [];
   private lotMat!: THREE.MeshStandardMaterial;
   private linesOn = false;
   private hemi!: THREE.HemisphereLight;
-  private siteMat!: THREE.MeshStandardMaterial;
+  private surround = new THREE.Group(); // hillside, olive trees and houses beyond the road
   private sun!: THREE.DirectionalLight;
   private bgDay: THREE.Texture;
   private bgNight: THREE.Texture;
@@ -146,6 +142,7 @@ export class VenueScene2 {
 
     this.buildLights();
     this.buildGround();
+    this.buildStreet();
     this.buildLotEdges();
     this.buildStalls();
     this.buildVillage();
@@ -196,7 +193,6 @@ export class VenueScene2 {
     this.fit();
     this.bindPicking();
     this.applyTime();
-    this.loadCars();
 
     const fontsReady = document.fonts?.load
       ? Promise.all([document.fonts.load(`800 40px ${opts.fonts.arabic}`), document.fonts.load(`700 30px ${opts.fonts.latin}`)]).catch(() => undefined)
@@ -221,7 +217,7 @@ export class VenueScene2 {
 
   setLayer(key: LayerKey, on: boolean) {
     if (key === "labels") this.labels.domElement.style.display = on ? "" : "none";
-    if (key === "surroundings") this.village.visible = on;
+    if (key === "surroundings") { this.village.visible = on; this.surround.visible = on; }
     if (key === "lines") { this.linesOn = on; if (this.stalls) this.stalls.visible = on; }
   }
 
@@ -415,18 +411,6 @@ export class VenueScene2 {
 
   private buildGround() {
     const loader = new THREE.TextureLoader();
-    // satellite context, fading into the background at its edges
-    const sw = SITE_IMAGE.x1 - SITE_IMAGE.x0, sh = SITE_IMAGE.z1 - SITE_IMAGE.z0;
-    const siteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, depthWrite: false });
-    this.siteMat = siteMat;
-    loader.load(SITE_IMAGE.url, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; siteMat.map = t; siteMat.needsUpdate = true; });
-    const site = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), siteMat);
-    site.rotation.x = -Math.PI / 2;
-    site.position.set((SITE_IMAGE.x0 + SITE_IMAGE.x1) / 2, -0.02, (SITE_IMAGE.z0 + SITE_IMAGE.z1) / 2);
-    site.receiveShadow = true;
-    site.renderOrder = -2;
-    this.site.add(site);
-
     // the yard surface, with its painted lines traced from the satellite
     const shape = new THREE.Shape();
     LOT_LOCAL.forEach(([x, z], i) => { const w = this.L(x, 0, z); if (i) shape.lineTo(w.x, -w.z); else shape.moveTo(w.x, -w.z); });
@@ -448,6 +432,222 @@ export class VenueScene2 {
         this.lotMat.needsUpdate = true;
       });
     load(LOT_TEXTURE.plain);
+  }
+
+  // ------------------------------------------------------------------ street & hillside
+  /** Soil, paving, asphalt and stone textures, drawn once. */
+  private noiseTile(base: string, dots: [string, number][], size = 256, seed = 3) {
+    const { c, g } = canvas(size, size);
+    g.fillStyle = base; g.fillRect(0, 0, size, size);
+    const r = rng(seed);
+    for (const [col, n] of dots) { g.fillStyle = col; for (let i = 0; i < n; i++) { const d = 1 + r() * 2.5; g.fillRect(r() * size, r() * size, d, d); } }
+    return { c, g };
+  }
+
+  /** A band along a centreline between two lateral offsets; y can vary per point and per side (walls use a == b). */
+  private band(P: THREE.Vector3[], N: THREE.Vector3[], a: number, b: number, y: (i: number, side: number) => number, m: THREE.Material, uv: { along?: number; world?: number }, parent: THREE.Object3D, shadow = false) {
+    const n = P.length, pos = new Float32Array(n * 6), tc = new Float32Array(n * 4), idx: number[] = [];
+    let dist = 0;
+    for (let i = 0; i < n; i++) {
+      if (i) dist += P[i].distanceTo(P[i - 1]);
+      for (let sd = 0; sd < 2; sd++) {
+        const off = sd ? b : a, k = i * 2 + sd;
+        const x = P[i].x + N[i].x * off, z = P[i].z + N[i].z * off;
+        pos.set([x, y(i, sd), z], k * 3);
+        if (uv.world) tc.set([x / uv.world, z / uv.world], k * 2);
+        else tc.set([sd, dist / (uv.along ?? 1)], k * 2);
+      }
+      if (i) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("uv", new THREE.BufferAttribute(tc, 2));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    m.side = THREE.DoubleSide;
+    const mesh = new THREE.Mesh(geo, m);
+    mesh.receiveShadow = true;
+    mesh.castShadow = shadow;
+    parent.add(mesh);
+    return mesh;
+  }
+
+  private buildStreet() {
+    const S = this.site, H = this.surround;
+    S.add(H);
+    // ground beyond the Sports Village: warm limestone soil, fading into the haze
+    const soil = this.noiseTile("#cbb994", [["rgba(150,128,94,.35)", 2600], ["rgba(240,232,214,.5)", 1800], ["rgba(120,112,80,.25)", 500]], 256, 5);
+    const soilMat = new THREE.MeshStandardMaterial({ map: tex(soil.c, true, [1, 1]), roughness: 1 });
+    soilMat.map!.wrapS = soilMat.map!.wrapT = THREE.RepeatWrapping;
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(700, 72), soilMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.06;
+    ground.receiveShadow = true;
+    // world-space UVs so the soil tiles every 14 m
+    const gu = ground.geometry.attributes.uv, gp = ground.geometry.attributes.position;
+    for (let i = 0; i < gp.count; i++) gu.setXY(i, gp.getX(i) / 14, gp.getY(i) / 14);
+    S.add(ground);
+
+    // centreline, sampled every ~2 m, normals pointing away from the yard
+    const curve = new THREE.CatmullRomCurve3(ROAD.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, "centripetal");
+    const n = Math.ceil(curve.getLength() / 2);
+    const P = curve.getSpacedPoints(n);
+    const N = P.map((_, i) => { const t = curve.getTangentAt(i / n); return new THREE.Vector3(-t.z, 0, t.x).normalize(); });
+    const near = (x: number, z: number) => P.reduce((best, p, i) => (Math.hypot(p.x - x, p.z - z) < Math.hypot(P[best].x - x, P[best].z - z) ? i : best), 0);
+    const centre = this.L(32, 0, 34);
+    const mid = near(ROAD[10][0], ROAD[10][1]);
+    if (N[mid].dot(centre.clone().sub(P[mid])) > 0) N.forEach((v) => v.negate());
+    const iA = near(...ROAD[ROAD_TRACED[0]]), iB = near(...ROAD[ROAD_TRACED[1]]);
+    const iH = near(...ROAD[13]), iE = near(...ROAD[16]);
+    const flatY = (h: number) => () => h;
+
+    // asphalt with edge lines and a dashed centre line (tile = 12 m)
+    const road = this.noiseTile("#3c3f43", [["rgba(20,22,24,.5)", 5000], ["rgba(120,124,128,.35)", 3000]], 256, 7);
+    const rg = road.g;
+    rg.fillStyle = "rgba(245,245,240,.92)";
+    rg.fillRect(256 * (0.35 / 8), 0, 256 * (0.13 / 8), 256);
+    rg.fillRect(256 * (1 - 0.48 / 8), 0, 256 * (0.13 / 8), 256);
+    rg.fillRect(128 - 2, 0, 4, 256 * (4 / 12));
+    const roadTex = tex(road.c, true, [1, 1]);
+    roadTex.wrapT = THREE.RepeatWrapping;
+    const roadMat = new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.88 });
+    this.band(P, N, -4, 4, flatY(0.012), roadMat, { along: 12 }, S);
+
+    // kerbs and pavements on both sides
+    const kerb = mat(0xe6e2da, { roughness: 0.7 });
+    const pave = this.noiseTile("#c9c2b4", [["rgba(110,100,86,.22)", 1500]], 256, 11);
+    pave.g.strokeStyle = "rgba(96,90,80,.4)"; pave.g.lineWidth = 2;
+    for (let i = 0; i <= 256; i += 64) { pave.g.beginPath(); pave.g.moveTo(i, 0); pave.g.lineTo(i, 256); pave.g.moveTo(0, i); pave.g.lineTo(256, i); pave.g.stroke(); }
+    const paveMat = new THREE.MeshStandardMaterial({ map: tex(pave.c, true, [1, 1]), roughness: 0.9 });
+    paveMat.map!.wrapS = paveMat.map!.wrapT = THREE.RepeatWrapping;
+    for (const sd of [-1, 1]) {
+      this.band(P, N, sd * 4, sd * 4, (_, k) => (k ? 0.15 : 0.012), kerb, { along: 1 }, S);
+      this.band(P, N, sd * 4, sd * 4.25, flatY(0.15), kerb, { along: 1 }, S);
+      this.band(P, N, sd * 4.25, sd * 6.5, flatY(0.15), paveMat, { world: 2 }, S);
+      this.band(P, N, sd * 6.5, sd * 6.5, (_, k) => (k ? 0.15 : -0.06), kerb, { along: 1 }, S);
+    }
+
+    // paved apron between the road and the yard walls (the inside of the loop)
+    const shape = new THREE.Shape();
+    for (let i = iA; i <= iB; i++) {
+      const x = P[i].x - N[i].x * 6.5, z = P[i].z - N[i].z * 6.5;
+      if (i === iA) shape.moveTo(x, -z); else shape.lineTo(x, -z);
+    }
+    const apronGeo = new THREE.ShapeGeometry(shape);
+    const ap = apronGeo.attributes.position, au = apronGeo.attributes.uv;
+    for (let i = 0; i < ap.count; i++) au.setXY(i, ap.getX(i) / 2, ap.getY(i) / 2);
+    apronGeo.rotateX(-Math.PI / 2);
+    const apron = new THREE.Mesh(apronGeo, paveMat);
+    apron.position.y = -0.02;
+    apron.receiveShadow = true;
+    S.add(apron);
+
+    // zebra crossing in front of the entrance
+    const gate = PLACES.gate, gw = this.L(gate.x, 0, gate.z);
+    const iz = near(gw.x, gw.z);
+    const zebra = mat(0xf4f4ef, { roughness: 0.6 });
+    for (let off = -3.25; off <= 3.3; off += 1.08) {
+      const m = this.add(S, new THREE.BoxGeometry(0.55, 0.012, 3.2), zebra, P[iz].x + N[iz].x * off, 0.02, P[iz].z + N[iz].z * off);
+      m.rotation.y = Math.atan2(-N[iz].z, N[iz].x);
+      m.castShadow = false;
+    }
+
+    // street lamps on the outer pavement, arms reaching over the road
+    const poleMat = mat(0x5b6168, { metalness: 0.6, roughness: 0.4 });
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, emissive: 0xffd9a0, emissiveIntensity: 0.2, roughness: 0.4 });
+    this.glowMats.push({ m: headMat, day: 0.2, night: 3.2 });
+    for (let i = iA + 4; i <= iB; i += 13) {
+      const b = P[i].clone().addScaledVector(N[i], 5.7);
+      const lamp = new THREE.Group();
+      lamp.position.set(b.x, 0.15, b.z);
+      lamp.rotation.y = Math.atan2(-N[i].x, -N[i].z);
+      this.add(lamp, new THREE.CylinderGeometry(0.07, 0.11, 7.2, 8), poleMat, 0, 3.6, 0);
+      this.add(lamp, new THREE.BoxGeometry(0.07, 0.07, 1.9), poleMat, 0, 7.1, 0.9);
+      this.add(lamp, new THREE.BoxGeometry(0.3, 0.1, 0.7), headMat, 0, 7.02, 1.8);
+      S.add(lamp);
+    }
+
+    // stone-terraced hillside beyond the road, like the slope behind the yard
+    const stone = this.noiseTile("#ebe1cb", [["rgba(120,104,78,.45)", 1400], ["rgba(244,236,218,.5)", 900]], 256, 13);
+    stone.g.strokeStyle = "rgba(96,84,64,.55)"; stone.g.lineWidth = 2;
+    for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) stone.g.strokeRect(col * 64 + (row % 2) * 32, row * 64, 64, 64);
+    const stoneMat = new THREE.MeshStandardMaterial({ map: tex(stone.c, true, [1, 1]), roughness: 0.95 });
+    stoneMat.map!.wrapT = THREE.RepeatWrapping;
+    const terraceMat = soilMat;
+    const smooth = (e0: number, e1: number, x: number) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+    const t0 = iA, t1 = iH;
+    const taper = (i: number) => smooth(t0, t0 + 22, i) * (1 - smooth(t1 - 18, t1, i));
+    const TP = P.slice(t0, t1 + 1), TN = N.slice(t0, t1 + 1);
+    const walls = [11, 18, 25, 32, 39, 46, 53];
+    const hgt = (k: number, i: number) => (k < 0 ? 0 : (k + 1) * 1.15 * taper(i + t0));
+    walls.forEach((d, k) => {
+      this.band(TP, TN, d, d, (i, sd) => (sd ? hgt(k, i) : hgt(k - 1, i)) - 0.02, stoneMat, { along: 6 }, H, true);
+      const d2 = walls[k + 1] ?? 120;
+      this.band(TP, TN, d, d2, (i, sd) => hgt(k, i) + (k === walls.length - 1 && sd ? 16 * taper(i + t0) : 0), terraceMat, { world: 14 }, H);
+    });
+
+    // olive trees on the terraces and scattered south of the road
+    const r = rng(21);
+    const trees: { x: number; y: number; z: number; s: number }[] = [];
+    walls.forEach((d, k) => {
+      const d2 = walls[k + 1] ?? 70;
+      for (let i = t0 + 6; i < t1 - 4; i += 3 + Math.floor(r() * 4)) {
+        if (r() < 0.3) continue;
+        const off = d + 1.8 + r() * (d2 - d - 3.6);
+        const q = P[i].clone().addScaledVector(N[i], off);
+        const y = k === walls.length - 1 ? hgt(k, i - t0) + 16 * taper(i) * Math.min(1, (off - d) / (120 - d)) : hgt(k, i - t0);
+        trees.push({ x: q.x, y, z: q.z, s: 0.8 + r() * 0.55 });
+      }
+    });
+    for (let i = iE; i < iB; i += 2 + Math.floor(r() * 3)) for (let row = 0; row < 3; row++) {
+      if (r() < 0.45) continue;
+      const q = P[i].clone().addScaledVector(N[i], 10 + row * 8 + r() * 5);
+      trees.push({ x: q.x, y: 0, z: q.z, s: 0.8 + r() * 0.5 });
+    }
+    const crownParts: THREE.BufferGeometry[] = [];
+    for (const [x, y, z, rad] of [[0, 2.3, 0, 1.15], [0.7, 2.0, 0.3, 0.85], [-0.6, 2.1, -0.4, 0.9], [0.1, 2.85, -0.2, 0.8]]) crownParts.push(new THREE.IcosahedronGeometry(rad, 1).scale(1, 0.72, 1).translate(x, y, z));
+    const crownGeo = mergeGeometries(crownParts);
+    const trunkGeo = new THREE.CylinderGeometry(0.12, 0.2, 1.8, 6).translate(0, 0.9, 0);
+    const crownMat = mat(0x76835a, { roughness: 0.95, flatShading: true });
+    const trunkMat = mat(0x6a5a48, { roughness: 1 });
+    const crowns = new THREE.InstancedMesh(crownGeo, crownMat, trees.length), trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, trees.length);
+    const o = new THREE.Object3D();
+    trees.forEach((t, k) => {
+      o.position.set(t.x, t.y, t.z); o.rotation.y = r() * Math.PI * 2; o.scale.setScalar(t.s); o.updateMatrix();
+      crowns.setMatrixAt(k, o.matrix); trunks.setMatrixAt(k, o.matrix);
+    });
+    for (const im of [crowns, trunks]) { im.castShadow = true; im.receiveShadow = true; H.add(im); }
+
+    // a few limestone houses south-east of the road, with water tanks and solar heaters on the roofs
+    const win = canvas(128, 128);
+    win.g.fillStyle = "#ece6d8"; win.g.fillRect(0, 0, 128, 128);
+    win.g.fillStyle = "#3a4048"; win.g.fillRect(36, 34, 56, 58);
+    win.g.fillStyle = "#d9d2c2"; win.g.fillRect(30, 92, 68, 6);
+    const roofMat = mat(0xe4ddcd, { roughness: 0.9 });
+    const tankMat = mat(0x1e2226, { roughness: 0.5 });
+    const panelMat = mat(0x243447, { roughness: 0.3, metalness: 0.4 });
+    let i = iH + 8;
+    while (i < iE - 4) {
+      const w = 11 + r() * 6, d = 10 + r() * 4, floors = 2 + Math.floor(r() * 3), h = floors * 3.1;
+      const ic = Math.min(iE - 4, Math.round(i + w / 4));
+      for (const row of [0, 1]) {
+        if (row && r() < 0.4) continue;
+        const fl = row ? floors + 1 : floors, hh = row ? h + 3.1 : h;
+        const off = 6.5 + 5 + d / 2 + row * (d + 6);
+        const c = P[ic].clone().addScaledVector(N[ic], off);
+        const house = new THREE.Group();
+        house.position.set(c.x, 0, c.z);
+        house.rotation.y = Math.atan2(N[ic].x, N[ic].z);
+        const wt = tex(win.c, true, [Math.max(2, Math.round(w / 3.5)), fl]);
+        this.add(house, new THREE.BoxGeometry(w, hh, d), new THREE.MeshStandardMaterial({ map: wt, roughness: 0.85 }), 0, hh / 2, 0);
+        this.add(house, new THREE.BoxGeometry(w + 0.3, 0.45, d + 0.3), roofMat, 0, hh + 0.2, 0);
+        for (let t = 0; t < 2 + Math.floor(r() * 2); t++) this.add(house, new THREE.CylinderGeometry(0.55, 0.55, 1.2, 14), tankMat, -w / 2 + 1.2 + t * 1.4, hh + 1.05, -d / 2 + 1.4);
+        const sp = this.add(house, new THREE.BoxGeometry(1.8, 0.06, 1.1), panelMat, w / 2 - 2, hh + 0.9, d / 2 - 2);
+        sp.rotation.x = -0.6;
+        H.add(house);
+      }
+      i += Math.round((w + 5 + r() * 4) / 2);
+    }
   }
 
   private concreteTexture(panel = 4) {
@@ -866,7 +1066,6 @@ export class VenueScene2 {
   private boothTop = new Map<string, number>();
 
   private buildBooths() {
-    const colors = [0xe9eef2, 0x1a1d21, 0x8f1d1d, 0x22406e, 0x6c6f73, 0xf2f2f2, 0x2b2b2b, 0x3b6e8f, 0xbfc4c9, 0x34495e, 0x7a1616, 0xd9d9d9];
     const white = mat(0xf1f3f4, { roughness: 0.45 });
     const dark = mat(0x0f1317, { roughness: 0.5 });
     const gloss = mat(0x0b0e11, { roughness: 0.16, metalness: 0.35 });
@@ -886,7 +1085,7 @@ export class VenueScene2 {
       golden: { cars: [-1.9, 1.9], posts: [0, -3.6], desk: 0 }, // 8 m
       regular: { cars: [0.7], posts: [-0.75, 2.4], desk: -2.2 }, // 6 m
     };
-    ZONES_V2.filter((z) => z.group === "booth").forEach((zone, i) => {
+    ZONES_V2.filter((z) => z.group === "booth").forEach((zone) => {
       const p = PLACES[zone.id];
       if (!p) return;
       const tier = TIERS[zone.id] ?? "regular";
@@ -918,18 +1117,14 @@ export class VenueScene2 {
       const deskW = tier === "premium" ? 1.6 : 0.6;
       this.add(g, this.rbox(deskW, 1.05, 0.45, 0.05), tier === "premium" ? gloss : white, B.desk, b + 0.525, d / 2 - 0.45, zone.id);
       this.add(g, new THREE.BoxGeometry(deskW + 0.02, 0.05, 0.47), S.strip, B.desk, b + 0.9, d / 2 - 0.45);
+      // car spaces: marked on the floor, empty until dealers send their own licensed models
       B.cars.forEach((cx, k) => {
-        const car = new THREE.Group();
-        car.userData.zone = zone.id;
-        car.position.set(cx, b, 0.12);
-        g.add(car);
-        this.carSlots.push({ g: car, color: colors[(i * 2 + k) % colors.length], hero: zone.id === "p1" });
+        const bay = this.add(g, new THREE.PlaneGeometry(2.2, 4.6), this.bayMaterial(k + 1, TIER_COLOR[tier]), cx, b + 0.012, 0.12, zone.id);
+        bay.rotation.x = -Math.PI / 2;
+        bay.castShadow = false;
       });
-      // two charging posts per stand, each cabled to the nearest car's rear port
-      for (const px of B.posts) {
-        const cx = B.cars.reduce((m, c) => (Math.abs(c - px) < Math.abs(m - px) ? c : m), B.cars[0]);
-        this.charger(g, px, -d / 2 + 0.5, { x: cx + Math.sign(px - cx || 1) * 0.6, z: -1.6 }, zone.id, 1.4, b);
-      }
+      // two charging posts per stand, beside the car spaces
+      for (const px of B.posts) this.charger(g, px, -d / 2 + 0.5, zone.id, 1.4, b);
     });
   }
 
@@ -1057,19 +1252,40 @@ export class VenueScene2 {
 
   private chargerGlow: THREE.MeshStandardMaterial | null = null;
 
-  private charger(parent: THREE.Object3D, x: number, z: number, port: { x: number; z: number }, zone: string, h = 1.5, base = 0.18) {
+  private bayMats = new Map<string, THREE.Material>();
+  /** Floor marking for one car space: dashed outline, "CAR n" and a front arrow, readable from the aisle. */
+  private bayMaterial(n: number, accent: string) {
+    const key = `${n}${accent}`;
+    const hit = this.bayMats.get(key);
+    if (hit) return hit;
+    const c = document.createElement("canvas");
+    c.width = 440; c.height = 920;
+    const g = c.getContext("2d")!;
+    g.strokeStyle = accent; g.lineWidth = 10; g.setLineDash([34, 22]);
+    g.beginPath(); g.roundRect(12, 12, 416, 896, 40); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = accent; g.globalAlpha = 0.9; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "800 92px Montserrat, system-ui, sans-serif"; g.fillText(`CAR ${n}`, 220, 470);
+    g.font = "700 60px Cairo, system-ui, sans-serif"; g.fillText(`سيارة ${n}`, 220, 570);
+    g.beginPath(); g.moveTo(220, 860); g.lineTo(170, 790); g.lineTo(270, 790); g.closePath(); g.fill();
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    const m = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false, opacity: 0.85 });
+    this.bayMats.set(key, m);
+    return m;
+  }
+
+  private charger(parent: THREE.Object3D, x: number, z: number, zone: string, h = 1.5, base = 0.18) {
     this.chargerGlow ||= this.glow(TEAL, 1.4, 3.2);
     const body = mat(0xf3f5f6, { roughness: 0.3 });
     const dark = mat(0x0e1216, { roughness: 0.35 });
     this.add(parent, this.rbox(0.42, h, 0.32, 0.06), body, x, base + h / 2, z, zone);
     this.add(parent, new THREE.BoxGeometry(0.3, 0.38, 0.02), dark, x, base + h * 0.72, z + 0.17);
     this.add(parent, new THREE.BoxGeometry(0.06, h * 0.45, 0.02), this.chargerGlow, x - 0.13, base + h * 0.4, z + 0.17);
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(x, base + h * 0.5, z + 0.18),
-      new THREE.Vector3((x + port.x) / 2, base + 0.04, (z + port.z) / 2 + 0.3),
-      new THREE.Vector3(port.x, base + 0.67, port.z),
-    ]);
-    this.add(parent, new THREE.TubeGeometry(curve, 24, 0.028, 6, false), dark);
+    // cable coiled on the side holster
+    const coil = this.add(parent, new THREE.TorusGeometry(0.16, 0.025, 8, 24), dark, x + 0.24, base + h * 0.55, z);
+    coil.rotation.y = Math.PI / 2;
   }
 
   private buildSigns() {
@@ -1173,53 +1389,6 @@ export class VenueScene2 {
       this.add(this.layout, this.rbox(0.6, 0.12, 0.3, 0.04), lampOff, x + 1.5, 7.98, z);
       this.add(this.layout, new THREE.PlaneGeometry(0.5, 0.22).rotateX(Math.PI / 2), lampGlow, x + 1.5, 7.9, z);
     }
-  }
-
-  // ------------------------------------------------------------------ cars
-  private loadCars() {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-    const prep = (scene: THREE.Object3D) => {
-      scene.traverse((o) => {
-        const m = o as THREE.Mesh;
-        if (!m.isMesh) return;
-        m.castShadow = true;
-        m.receiveShadow = true;
-        const name = (m.material as THREE.Material | undefined)?.name ?? "";
-        if (/licen/i.test(m.name) || /licen/i.test(name)) m.visible = false;
-      });
-      return scene;
-    };
-    const place = (tpl: THREE.Object3D, slots: { g: THREE.Group; color: number; hero: boolean }[]) => {
-      for (const slot of slots) {
-        const c = SkeletonUtils.clone(tpl);
-        const cache = new Map<THREE.Material, THREE.Material>();
-        c.traverse((o) => {
-          const m = o as THREE.Mesh;
-          if (!m.isMesh) return;
-          m.userData.zone = slot.g.userData.zone;
-          this.pick.push(m);
-          const mt = m.material as THREE.MeshPhysicalMaterial;
-          if (mt && /^Paint/.test(mt.name || "")) {
-            if (!cache.has(mt)) {
-              const k = mt.clone();
-              k.color.set(slot.color);
-              k.clearcoat = 1;
-              k.clearcoatRoughness = 0.06;
-              k.roughness = 0.32;
-              k.metalness = 0.6;
-              cache.set(mt, k);
-            }
-            m.material = cache.get(mt) as THREE.Material;
-          }
-        });
-        c.position.z = -0.24; // centre the body on its slot
-        c.scale.setScalar(1.02);
-        slot.g.add(c);
-      }
-    };
-    loader.load("/models/car-lod.glb", (gltf) => { if (this.alive) place(prep(gltf.scene), this.carSlots.filter((s) => !s.hero)); });
-    loader.load("/models/car.glb", (gltf) => { if (this.alive) place(prep(gltf.scene), this.carSlots.filter((s) => s.hero)); });
   }
 
   // ------------------------------------------------------------------ pins & selection
@@ -1351,7 +1520,6 @@ export class VenueScene2 {
     this.nightOnly.forEach((l) => (l.visible = n));
     this.glowMats.forEach(({ m, day, night }) => (m.emissiveIntensity = n ? night : day));
     this.bloom.enabled = n;
-    this.siteMat.color.set(n ? 0x2a3138 : 0xffffff);
     this.ao.blendIntensity = n ? 0.6 : 0.85;
   }
 
