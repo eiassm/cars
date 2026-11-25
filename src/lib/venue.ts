@@ -20,8 +20,14 @@ export const LOT_LOCAL: [number, number][] = [
 /** Edge indices (i → i+1) that stay open: 13→0 is the straight edge along the courts walkway, 6→8 the entrance. */
 export const OPEN_EDGES = new Set([6, 7, 12]);
 
-/** Satellite ground image placement in the SITE frame. */
-export const SITE_IMAGE = { url: "/venue/site.webp", x0: -91.03, x1: 63.46, z0: -132.64, z1: 63.72 };
+/**
+ * Loop road around the yard, traced from the satellite (SITE frame, x/z in metres).
+ * The first two and last three points run the road on past the traced part, out into the haze.
+ */
+export const ROAD: [number, number][] = [[-140, -62], [-100, -56], [-79.33, -52.22], [-61.77, -49.1], [-42.26, -47.34], [-22.76, -45.2], [-3.25, -43.63], [16.25, -42.46], [30.88, -38.95], [42.2, -30.75], [47.85, -19.43], [49.81, -5.77], [47.46, 7.51], [40.83, 19.22], [29.52, 28.59], [15.28, 36.39], [-0.33, 43.62], [-14.57, 50.45], [-23.73, 55.72], [-29.0, 63.72], [-25.5, 70.9], [-19.5, 83.6], [-3.8, 114.9]];
+/** Index range of ROAD that was traced (the rest are extensions). */
+export const ROAD_TRACED: [number, number] = [2, 19];
+
 export const LOT_TEXTURE = { plain: "/venue/lot-plain.webp", x0: -45, x1: 45, z0: -40, z1: 40 };
 
 export type Facing = "in" | "c";

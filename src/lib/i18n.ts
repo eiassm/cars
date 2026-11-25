@@ -155,7 +155,7 @@ const ar = {
     clear: "إلغاء التحديد",
     metres: "م",
     note: "القياسات تقريبية ومأخوذة من مخطط الموقع بمقياس 1:250 (حوالي 62 × 61 م، المدخل الوحيد من الجنوب). توزيع الأجنحة مقترح أوّلي للنقاش.",
-    credit: "نموذج السيارة مؤقت للعرض: CarConcept © Darmstadt Graphics Group, CC BY 4.0 — يُستبدل بموديلات الوكلاء الفعلية.",
+    credit: "أماكن السيارات محدّدة على أرضية كل جناح، وتُعرض فيها سيارات الوكلاء الفعلية عند تأكيد مشاركتهم.",
     noWebgl: "يتعذّر عرض النموذج ثلاثي الأبعاد على هذا الجهاز.",
   },
 };
@@ -313,7 +313,7 @@ const en: Dictionary = {
     clear: "Clear selection",
     metres: "m",
     note: "Dimensions are approximate, from the 1:250 site plan (about 62 × 61 m, single entrance on the south). The pavilion layout is a first proposal for discussion.",
-    credit: "Placeholder car model: CarConcept © Darmstadt Graphics Group, CC BY 4.0 — to be replaced with the dealers' own models.",
+    credit: "Car spaces are marked on each stand's floor; dealers' real cars go there once they confirm.",
     noWebgl: "This device can't display the 3D model.",
   },
 };
